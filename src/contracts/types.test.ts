@@ -37,3 +37,20 @@ test("FinalResponse: insufficient_data — boolean", () => {
   });
   assert.equal(v.insufficient_data, true);
 });
+
+import { FinalResponseSchema as FR2, UserQuerySchema } from "./types.ts";
+
+test("FinalResponse: опциональные plan и sub_answers парсятся", () => {
+  const v = FR2.parse({
+    response: "ответ", assumptions: [], trace: [], chart: null,
+    insufficient_data: false, session_id: "s1",
+    plan: { mode: "research", sub_questions: ["a", "b"] }, sub_answers: ["x", "y"],
+  });
+  assert.equal(v.plan?.mode, "research");
+  assert.equal(v.sub_answers?.length, 2);
+});
+
+test("UserQuery: prefer_research опционален", () => {
+  const v = UserQuerySchema.parse({ message: "q", prefer_research: true });
+  assert.equal(v.prefer_research, true);
+});

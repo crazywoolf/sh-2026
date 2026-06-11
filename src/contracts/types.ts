@@ -3,6 +3,7 @@ import { z } from "zod";
 export const UserQuerySchema = z.object({
   message: z.string(),
   session_id: z.string().optional(),
+  prefer_research: z.boolean().optional(),
 });
 export type UserQuery = z.infer<typeof UserQuerySchema>;
 
@@ -79,6 +80,12 @@ export const TraceEntrySchema = z.object({
 });
 export type TraceEntry = z.infer<typeof TraceEntrySchema>;
 
+export const PlanSummarySchema = z.object({
+  mode: z.enum(["bi", "research", "insufficient"]),
+  sub_questions: z.array(z.string()),
+});
+export type PlanSummary = z.infer<typeof PlanSummarySchema>;
+
 export const FinalResponseSchema = z.object({
   response: z.string(),
   assumptions: z.array(z.string()),
@@ -86,5 +93,7 @@ export const FinalResponseSchema = z.object({
   chart: ChartSchema.nullable(),
   insufficient_data: z.boolean(),
   session_id: z.string(),
+  plan: PlanSummarySchema.optional(),
+  sub_answers: z.array(z.string()).optional(),
 });
 export type FinalResponse = z.infer<typeof FinalResponseSchema>;
