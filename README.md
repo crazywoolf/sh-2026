@@ -36,6 +36,15 @@ curl -s localhost:8000/api/chat \
   -d '{"message":"покажи выручку по продуктовым линиям"}'
 ```
 
+## Веб-интерфейс (этап 5)
+
+После `npm start` открыть http://localhost:8000 — три режима:
+- **Диалоговый BI** — чат с удержанием контекста диалога.
+- **Ad-hoc исследование** — сложный вопрос → декомпозиция + мини-исследование.
+- **Отчёты по расписанию** — авто-сборка дашборда здоровья (cron `SCHEDULE_CRON`, по умолчанию пн 9:00) + кнопка «Собрать сейчас». Доставка: инбокс + опц. webhook/Telegram (см. `.env.example`).
+
+Для демо частого срабатывания планировщика: `SCHEDULE_CRON="*/2 * * * *" npm start`.
+
 ## Архитектура
 
 Planner → Extractor → Analyst → Critic (loopback ≤2) → Visualization; контракты в `src/contracts/types.ts`; детали в `docs/superpowers/specs/2026-06-11-stage2-architecture-contracts-design.md`.
