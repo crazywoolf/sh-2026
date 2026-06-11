@@ -74,6 +74,12 @@ export function reportToText(r: Report): string {
     }
     lines.push("");
   }
+  const recs = r.recommendations ?? [];
+  if (recs.length) {
+    lines.push("💡 <b>Рекомендации</b>");
+    for (const rec of recs) lines.push(`• ${escapeHtml(clip(rec, 220))}`);
+    lines.push("");
+  }
   lines.push("<i>Автоотчёт Meridian · собран по расписанию</i>");
   lines.push("");
   lines.push("ℹ️ <b>Условные обозначения</b>");

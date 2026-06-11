@@ -95,6 +95,14 @@ function renderReport(out, rep) {
     grid.appendChild(c);
   }
   out.appendChild(grid);
+  const recs = rep.recommendations || [];
+  if (recs.length) {
+    const box = document.createElement("div");
+    box.className = "bubble";
+    box.innerHTML = "<b>💡 Рекомендации</b>" +
+      recs.map((r) => `<div class="subq">${escapeHtml(r)}</div>`).join("");
+    out.appendChild(box);
+  }
 }
 
 document.querySelectorAll(".tab").forEach((t) => {

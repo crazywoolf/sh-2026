@@ -7,9 +7,12 @@ import { Inbox, deliver as deliverReport } from "./delivery.ts";
 import { compileReport, type Report } from "./report.ts";
 import { PRESETS } from "./presets.ts";
 import { createReportJob, startScheduler } from "./scheduler.ts";
+import { makeRecommender } from "./recommend.ts";
 import type { UserQuery } from "./contracts/types.ts";
 
-const agents = buildAgents(createLLMClient());
+const llm = createLLMClient();
+const agents = buildAgents(llm);
+const recommend = makeRecommender(llm);
 const sessions = new SessionStore(5);
 const inbox = new Inbox();
 
@@ -27,13 +30,13 @@ const deliverOpts = {
     ? { token: process.env.TELEGRAM_BOT_TOKEN, chatId: process.env.TELEGRAM_CHAT_ID }
     : undefined,
 };
-const compileNow = () => compileReport(pipeline, new Date().toISOString());
+const compileNow = () => compileReport(pipeline, new Date().toISOString(), { recommend });
 const deliver = (rep: Report) => deliverReport(rep, deliverOpts);
 
 const app = buildServer({ pipeline, inbox, compileNow, deliver, presets: PRESETS });
 
 const cronExpr = process.env.SCHEDULE_CRON ?? "0 9 * * 1";
-startScheduler(cronExpr, createReportJob(pipeline, deliverOpts));
+startScheduler(cronExpr, createReportJob(pipeline, deliverOpts, undefined, { recommend }));
 
 const port = Number(process.env.PORT ?? 8000);
 app.listen({ port, host: "0.0.0.0" })

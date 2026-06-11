@@ -1,6 +1,6 @@
 import cron from "node-cron";
 import type { FinalResponse, UserQuery } from "./contracts/types.ts";
-import { compileReport } from "./report.ts";
+import { compileReport, type CompileOpts } from "./report.ts";
 import { deliver, type DeliverOpts } from "./delivery.ts";
 
 type Pipeline = (q: UserQuery) => Promise<FinalResponse>;
@@ -10,9 +10,10 @@ export function createReportJob(
   pipeline: Pipeline,
   deliverOpts: DeliverOpts,
   now: () => string = () => new Date().toISOString(),
+  compileOpts?: CompileOpts,
 ): () => Promise<void> {
   return async () => {
-    const report = await compileReport(pipeline, now());
+    const report = await compileReport(pipeline, now(), compileOpts);
     await deliver(report, deliverOpts);
   };
 }
