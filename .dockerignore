@@ -1,0 +1,10 @@
+node_modules
+.git
+.env
+db/meridian.duckdb
+db/*.duckdb.wal
+data/meridian-case-data.zip
+.tools
+.claude
+docs/superpowers
+**/*.log
