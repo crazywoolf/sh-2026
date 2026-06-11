@@ -28,13 +28,21 @@ export const ExtractorOutputSchema = z.object({
 });
 export type ExtractorOutput = z.infer<typeof ExtractorOutputSchema>;
 
+// Коэрсинг к строке: LLM иногда кладёт в текстовые поля объекты/числа — не роняем парсинг.
+const Stringy = z.unknown().transform((v) => (typeof v === "string" ? v : v == null ? "" : JSON.stringify(v)));
+// Список строк, устойчивый к null/одиночному значению/объектам внутри.
+export const StringArray = z.preprocess(
+  (v) => (Array.isArray(v) ? v : v == null ? [] : [v]),
+  z.array(Stringy),
+);
+
 export const AnalystOutputSchema = z.object({
-  answer: z.string(),
-  key_findings: z.array(z.string()),
-  method: z.string(),
-  assumptions: z.array(z.string()),
-  caveats: z.array(z.string()),
-  confidence: z.enum(["high", "medium", "low"]),
+  answer: Stringy,
+  key_findings: StringArray,
+  method: Stringy,
+  assumptions: StringArray,
+  caveats: StringArray,
+  confidence: z.enum(["high", "medium", "low"]).catch("medium"),
 });
 export type AnalystOutput = z.infer<typeof AnalystOutputSchema>;
 

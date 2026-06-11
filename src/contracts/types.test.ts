@@ -1,6 +1,21 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { PlannerOutputSchema, CriticOutputSchema, FinalResponseSchema } from "./types.ts";
+import { PlannerOutputSchema, CriticOutputSchema, FinalResponseSchema, AnalystOutputSchema } from "./types.ts";
+
+test("AnalystOutput: key_findings из объектов коэрсятся в строки (не падает)", () => {
+  const v = AnalystOutputSchema.parse({
+    answer: "вывод",
+    key_findings: [{ line: "IT", revenue: 100 }, "уже строка"],
+    method: "sum",
+    assumptions: null,
+    caveats: "одиночная строка",
+    confidence: "ультра",
+  });
+  assert.equal(typeof v.key_findings[0], "string");
+  assert.deepEqual(v.assumptions, []);
+  assert.deepEqual(v.caveats, ["одиночная строка"]);
+  assert.equal(v.confidence, "medium"); // невалидное → дефолт
+});
 
 test("PlannerOutput: валидный bi-режим парсится", () => {
   const v = PlannerOutputSchema.parse({ mode: "bi", reasoning: "r", sub_questions: ["q"] });

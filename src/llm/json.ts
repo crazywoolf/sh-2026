@@ -1,4 +1,4 @@
-import type { ZodType } from "zod";
+import type { ZodTypeAny } from "zod";
 import type { LLMClient } from "./client.ts";
 
 function extractJSON(text: string): string {
@@ -9,10 +9,10 @@ function extractJSON(text: string): string {
   return start >= 0 && end > start ? body.slice(start, end + 1) : body.trim();
 }
 
-export async function callJSON<T>(
-  client: LLMClient, system: string, user: string, schema: ZodType<T>,
+export async function callJSON<S extends ZodTypeAny>(
+  client: LLMClient, system: string, user: string, schema: S,
   opts?: { model?: string },
-): Promise<T> {
+): Promise<S["_output"]> {
   let lastErr: unknown;
   for (let attempt = 0; attempt < 2; attempt++) {
     const raw = await client.complete(
