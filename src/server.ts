@@ -1,8 +1,22 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import Fastify, { type FastifyInstance } from "fastify";
 import type { FinalResponse, UserQuery } from "./contracts/types.ts";
+import type { Inbox } from "./delivery.ts";
+import type { Report } from "./report.ts";
+import type { Preset } from "./presets.ts";
 
 export type PipelineFn = (q: UserQuery) => Promise<FinalResponse>;
+export type ServerDeps = {
+  pipeline: PipelineFn;
+  inbox: Inbox;
+  compileNow: () => Promise<Report>;
+  presets: Pick<Preset, "title" | "question">[];
+};
+
 const PATHS = ["/api/chat", "/api/v1/chat", "/chat", "/api/ask", "/api/query"];
+const WEB = resolve(process.cwd(), "web");
+function readWeb(name: string): string { return readFileSync(resolve(WEB, name), "utf8"); }
 
 function extractMessage(body: unknown): string | null {
   if (!body || typeof body !== "object") return null;
@@ -16,18 +30,26 @@ function extractMessage(body: unknown): string | null {
   return null;
 }
 
-export function buildServer(pipeline: PipelineFn): FastifyInstance {
+export function buildServer(deps: ServerDeps): FastifyInstance {
   const app = Fastify({ logger: false });
-
-  app.setErrorHandler((err, _req, reply) => {
-    if ((err as { statusCode?: number }).statusCode === 400) {
-      return reply.code(400).send({ error: "невалидный JSON" });
-    }
-    return reply.code(400).send({ error: "ошибка запроса" });
-  });
+  app.setErrorHandler((_err, _req, reply) => reply.code(400).send({ error: "ошибка запроса" }));
   app.setNotFoundHandler((_req, reply) => reply.code(404).send({ error: "путь не найден" }));
 
   app.get("/health", async () => ({ status: "ok" }));
+
+  const serve = (name: string, type: string) => async (_req: unknown, reply: { type: (t: string) => { send: (b: string) => unknown } }) =>
+    reply.type(type).send(readWeb(name));
+  app.get("/", serve("index.html", "text/html; charset=utf-8") as never);
+  app.get("/app.js", serve("app.js", "application/javascript; charset=utf-8") as never);
+  app.get("/styles.css", serve("styles.css", "text/css; charset=utf-8") as never);
+
+  app.get("/api/presets", async () => deps.presets);
+  app.post("/api/report", async (_req, reply) => {
+    const rep = await deps.compileNow();
+    deps.inbox.add(rep);
+    return reply.code(200).send(rep);
+  });
+  app.get("/api/reports", async () => deps.inbox.list());
 
   const handler = async (req: { body: unknown }, reply: { code: (n: number) => { send: (b: unknown) => unknown } }) => {
     const body = req.body;
@@ -38,19 +60,20 @@ export function buildServer(pipeline: PipelineFn): FastifyInstance {
     if (message === null || message.trim() === "") {
       return reply.code(422).send({ error: "отсутствует поле вопроса (message/query/messages)" });
     }
-    const session_id = (body as Record<string, unknown>).session_id;
+    const b = body as Record<string, unknown>;
+    const session_id = typeof b.session_id === "string" ? b.session_id : undefined;
+    const prefer_research = b.prefer_research === true;
     try {
-      const res = await pipeline({ message, session_id: typeof session_id === "string" ? session_id : undefined });
+      const res = await deps.pipeline({ message, session_id, prefer_research });
       return reply.code(200).send(res);
     } catch {
       return reply.code(200).send({
         response: "Произошла внутренняя ошибка при обработке запроса.",
         assumptions: [], trace: [], chart: null, insufficient_data: true,
-        session_id: typeof session_id === "string" ? session_id : "s-error",
+        session_id: session_id ?? "s-error",
       } satisfies FinalResponse);
     }
   };
-
   for (const p of PATHS) app.post(p, handler as never);
   return app;
 }
