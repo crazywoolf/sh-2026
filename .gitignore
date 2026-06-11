@@ -3,3 +3,10 @@ data/*.zip
 data/_*.npz
 .claude/settings.local.json
 .DS_Store
+
+# Бинарь БД DuckDB (собирается из CSV через db/build.sh)
+db/meridian.duckdb
+db/*.duckdb.wal
+
+# Локально скачанный DuckDB CLI
+.tools/
