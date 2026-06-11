@@ -3,8 +3,8 @@ import { buildAgents } from "./wiring.ts";
 import { runPipeline } from "./orchestrator.ts";
 import { createLLMClient } from "./llm/client.ts";
 import { SessionStore } from "./session/store.ts";
-import { Inbox } from "./delivery.ts";
-import { compileReport } from "./report.ts";
+import { Inbox, deliver as deliverReport } from "./delivery.ts";
+import { compileReport, type Report } from "./report.ts";
 import { PRESETS } from "./presets.ts";
 import { createReportJob, startScheduler } from "./scheduler.ts";
 import type { UserQuery } from "./contracts/types.ts";
@@ -28,8 +28,9 @@ const deliverOpts = {
     : undefined,
 };
 const compileNow = () => compileReport(pipeline, new Date().toISOString());
+const deliver = (rep: Report) => deliverReport(rep, deliverOpts);
 
-const app = buildServer({ pipeline, inbox, compileNow, presets: PRESETS });
+const app = buildServer({ pipeline, inbox, compileNow, deliver, presets: PRESETS });
 
 const cronExpr = process.env.SCHEDULE_CRON ?? "0 9 * * 1";
 startScheduler(cronExpr, createReportJob(pipeline, deliverOpts));

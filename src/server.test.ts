@@ -10,10 +10,12 @@ const ok: FinalResponse = {
   insufficient_data: false, session_id: "s1",
 };
 function deps(over: Partial<ServerDeps> = {}): ServerDeps {
+  const inbox = new Inbox();
   return {
     pipeline: async () => ok,
-    inbox: new Inbox(),
+    inbox,
     compileNow: async (): Promise<Report> => ({ generatedAt: "t", items: [] }),
+    deliver: async (r: Report) => { inbox.add(r); },
     presets: [{ title: "T", question: "q" }],
     ...over,
   };

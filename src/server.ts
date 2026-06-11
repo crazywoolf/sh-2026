@@ -11,6 +11,7 @@ export type ServerDeps = {
   pipeline: PipelineFn;
   inbox: Inbox;
   compileNow: () => Promise<Report>;
+  deliver: (r: Report) => Promise<void>;
   presets: Pick<Preset, "title" | "question">[];
 };
 
@@ -46,7 +47,7 @@ export function buildServer(deps: ServerDeps): FastifyInstance {
   app.get("/api/presets", async () => deps.presets);
   app.post("/api/report", async (_req, reply) => {
     const rep = await deps.compileNow();
-    deps.inbox.add(rep);
+    await deps.deliver(rep); // инбокс + опц. webhook/Telegram
     return reply.code(200).send(rep);
   });
   app.get("/api/reports", async () => deps.inbox.list());
