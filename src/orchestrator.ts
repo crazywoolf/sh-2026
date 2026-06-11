@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type {
   UserQuery, FinalResponse, TraceEntry, PlannerOutput,
   ExtractorOutput, AnalystOutput, CriticOutput, VizOutput,
@@ -37,13 +38,20 @@ async function answerOne(a: Agents, q: string, trace: TraceEntry[]) {
 
 export async function runPipeline(a: Agents, query: UserQuery): Promise<FinalResponse> {
   const trace: TraceEntry[] = [];
-  const session_id = query.session_id ?? "s-" + trace.length;
+  const session_id = query.session_id ?? `s-${randomUUID()}`;
   const planned = await a.plan(query.message);
   trace.push({ agent: "planner", note: planned.mode });
 
   if (planned.mode === "insufficient") {
     return {
       response: `Недостаточно данных для ответа: ${planned.reasoning}`,
+      assumptions: [], trace, chart: null, insufficient_data: true, session_id,
+    };
+  }
+
+  if (planned.sub_questions.length === 0) {
+    return {
+      response: `Недостаточно данных для надёжного ответа: план не содержит под-вопросов.`,
       assumptions: [], trace, chart: null, insufficient_data: true, session_id,
     };
   }

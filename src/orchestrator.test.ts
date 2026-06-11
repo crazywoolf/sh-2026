@@ -39,3 +39,17 @@ test("extractor data_sufficient=false → insufficient_data=true", async () => {
   }), { message: "q" });
   assert.equal(r.insufficient_data, true);
 });
+
+test("пустой sub_questions при bi → insufficient_data, без краха", async () => {
+  const r = await runPipeline(agents({
+    plan: async () => ({ mode: "bi", reasoning: "пусто", sub_questions: [] }),
+  }), { message: "q" });
+  assert.equal(r.insufficient_data, true);
+  assert.ok(r.response.length > 0);
+});
+
+test("session_id генерируется, если не передан", async () => {
+  const r = await runPipeline(agents({}), { message: "q" });
+  assert.ok(r.session_id.startsWith("s-"));
+  assert.ok(r.session_id.length > 3);
+});
