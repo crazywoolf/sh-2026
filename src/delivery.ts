@@ -75,6 +75,19 @@ export function reportToText(r: Report): string {
     lines.push("");
   }
   lines.push("<i>Автоотчёт Meridian · собран по расписанию</i>");
+  lines.push("");
+  lines.push("ℹ️ <b>Условные обозначения</b>");
+  lines.push("⚠️ требует внимания · ✅ в норме · ❔ данных недостаточно");
+  lines.push("");
+  lines.push("<b>Сокращения:</b>");
+  lines.push("• GMV — валовой оборот платформы");
+  lines.push("• LTV — пожизненная ценность клиента");
+  lines.push("• CAC — стоимость привлечения клиента");
+  lines.push("• LTV/CAC — окупаемость привлечения (&lt;1 — убыточно)");
+  lines.push("• NPS — индекс лояльности клиентов");
+  lines.push("• YoY — изменение год к году");
+  lines.push("• AI — отток к AI-инструментам конкурентов");
+  lines.push("• млрд / млн / тыс — миллиард / миллион / тысяча");
   return lines.join("\n");
 }
 
