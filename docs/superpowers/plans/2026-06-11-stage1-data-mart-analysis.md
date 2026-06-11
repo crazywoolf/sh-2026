@@ -1,314 +1,369 @@
-# Этап 1 — Анализ витрины Meridian: план реализации
+# Этап 1 — Витрина Meridian в DuckDB + аналитика: план реализации
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Подготовить 4 аналитических markdown-документа по витрине Meridian (карта данных, каталог метрик, ловушки качества, банк вопросов) — на реальных цифрах из CSV, на русском, без написания кода приложения.
+**Goal:** Загрузить 8 CSV витрины Meridian в файловую БД DuckDB и подготовить аналитические документы (схема БД, каталог метрик, ловушки качества, банк вопросов), где каждое утверждение подкреплено реальным, проверенным SQL.
 
-**Architecture:** Документы пишутся в `docs/stage1/`. Дисциплина «test-first» адаптирована под аналитику: сначала запускаем команду извлечения (awk/grep по CSV) и фиксируем фактическое число → затем пишем утверждение, цитирующее это число → проверяем, что документ совпадает с данными → коммитим. Команды извлечения — read-only инспекция CSV, не код приложения.
+**Architecture:** Один файл `db/meridian.duckdb`, собираемый идемпотентным SQL-загрузчиком через DuckDB CLI (Python в окружении сломан). Документы в `docs/stage1/` цитируют только цифры, полученные SQL-запросом к собранной БД. Бинарь БД в git не коммитим — пересобирается из CSV.
 
-**Tech Stack:** Markdown, mermaid (ER-диаграмма), awk/grep/sort для извлечения цифр из CSV в `data/`. Без DuckDB, ноутбуков и кода приложения.
+**Tech Stack:** DuckDB CLI (ставится `brew install duckdb`), SQL, Markdown, mermaid. Без Python/ноутбуков.
 
-**Источники:** спека [docs/superpowers/specs/2026-06-11-stage1-data-mart-analysis-design.md](../specs/2026-06-11-stage1-data-mart-analysis-design.md), [docs/data-dictionary.md](../../data-dictionary.md), [docs/case.md](../../case.md), 8 CSV в [data/](../../../data/).
+**Источники:** спека [../specs/2026-06-11-stage1-data-mart-analysis-design.md](../specs/2026-06-11-stage1-data-mart-analysis-design.md), [docs/data-dictionary.md](../../data-dictionary.md), 8 CSV в [data/](../../../data/). Уже готов `docs/stage1/01-data-map.md`.
 
-**Принцип цитирования:** каждое числовое утверждение в документах сопровождается источником — именем CSV и (где уместно) самой командой/формулой. Цифры берём только из фактических CSV, никогда из текста витрины на сайте или из легенды кейса (их расхождения сами по себе — материал для документа ③).
-
----
-
-## Task 0: Каркас директории
-
-**Files:**
-- Create: `docs/stage1/` (директория)
-
-- [ ] **Step 1: Создать директорию**
-
-Run:
-```bash
-mkdir -p /Users/irinafrolova/Documents/sh26/docs/stage1
-```
-Expected: директория создана, ошибок нет.
-
-- [ ] **Step 2: Зафиксировать рабочий каталог для последующих команд**
-
-Все команды извлечения ниже выполняются из `data/`:
-```bash
-cd /Users/irinafrolova/Documents/sh26/data
-```
-Expected: `pwd` → `/Users/irinafrolova/Documents/sh26/data`.
+**Принцип цитирования:** каждое число в документах получено SQL-запросом к `db/meridian.duckdb`. Цифры — только из данных, не из текста легенды кейса (их расхождения — материал для документа 03).
 
 ---
 
-## Task 1: `01-data-map.md` — карта витрины
+## Task 1: Сборка БД DuckDB (загрузчик + build + верификация)
 
 **Files:**
-- Create: `docs/stage1/01-data-map.md`
+- Create: `db/load.sql`, `db/build.sh`
+- Modify: `.gitignore`
+- Artifact (не в git): `db/meridian.duckdb`
 
-- [ ] **Step 1: Извлечь фактические объёмы и периоды (ground truth)**
-
-Run (из `data/`):
-```bash
-for f in *.csv; do printf "%-32s rows=%s\n" "$f" "$(($(wc -l < "$f")-1))"; done
-echo "orders span:";    awk -F, 'NR>1{print $4}' orders.csv | sort | (head -1; tail -1)
-echo "financials span:"; awk -F, 'NR>1{print $1}' financials_monthly.csv | sort | (head -1; tail -1)
-echo "nps span:";        awk -F, 'NR>1{print $4}' nps_responses.csv | sort | (head -1; tail -1)
-```
-Expected (опорные значения): orders 681305, customer_activity_monthly 608920, nps_responses 56164, customers 25000, churn_reasons 8873, unit_economics_monthly 918, financials_monthly 36, product_lines 9. Период данных: 2023-01 … 2025-12.
-
-- [ ] **Step 2: Написать документ**
-
-Структура `docs/stage1/01-data-map.md`:
-1. Заголовок + одна фраза о назначении витрины (36 мес, B2B-маркетплейс).
-2. **ER-диаграмма** в mermaid. Точный блок для вставки:
-```markdown
-​```mermaid
-erDiagram
-    customers ||--o{ orders : customer_id
-    customers ||--o{ nps_responses : customer_id
-    customers ||--o{ customer_activity_monthly : customer_id
-    customers ||--o| churn_reasons : customer_id
-    product_lines ||--o{ orders : product_line_id
-    product_lines ||--o{ nps_responses : product_line_id
-    product_lines ||--o{ unit_economics_monthly : product_line_id
-    financials_monthly {
-        date month PK
-    }
-​```
-```
-3. **Таблица гранулярности** — строки: имя таблицы · «что = одна строка» · период · объём (из Step 1) · что измеряет. Заполнить по 8 таблицам.
-4. **Уровни агрегации** (абзац): `financials_monthly` — платформа целиком; `unit_economics_monthly` — срез сегмент×линия×месяц; `orders`/`customer_activity_monthly`/`nps_responses` — транзакционный/событийный; `customers`/`product_lines` — справочники; `churn_reasons` — exit-интервью (одна строка на ушедшего клиента).
-5. Ссылка на `docs/data-dictionary.md` за полными схемами колонок (не дублировать колонки целиком).
-
-- [ ] **Step 3: Проверить соответствие данным**
+- [ ] **Step 1: Установить DuckDB CLI**
 
 Run:
 ```bash
-grep -E "681305|608920|56164|25000|8873|918|36|9" /Users/irinafrolova/Documents/sh26/docs/stage1/01-data-map.md | wc -l
+which duckdb || brew install duckdb
+duckdb --version
 ```
-Expected: ≥6 (большинство опорных объёмов процитированы). Глазами свериться: каждая из 8 таблиц присутствует в таблице гранулярности и в ER-диаграмме.
+Expected: печатается версия (например `v1.x.x`). Если brew долго — дождаться.
+
+- [ ] **Step 2: Написать `db/load.sql`**
+
+Идемпотентный загрузчик. Содержимое:
+```sql
+-- Загрузка витрины Meridian из CSV в DuckDB. Идемпотентно (CREATE OR REPLACE).
+-- Запускать из корня репозитория: duckdb db/meridian.duckdb < db/load.sql
+
+CREATE OR REPLACE TABLE customers AS
+SELECT * FROM read_csv_auto('data/customers.csv', header=true,
+  types={'customer_id':'INTEGER','signup_date':'DATE','churn_date':'DATE'});
+
+CREATE OR REPLACE TABLE product_lines AS
+SELECT * FROM read_csv_auto('data/product_lines.csv', header=true,
+  types={'product_line_id':'INTEGER','launch_date':'DATE'});
+
+CREATE OR REPLACE TABLE orders AS
+SELECT * FROM read_csv_auto('data/orders.csv', header=true,
+  types={'order_id':'BIGINT','customer_id':'INTEGER','product_line_id':'INTEGER','order_date':'DATE'});
+
+CREATE OR REPLACE TABLE nps_responses AS
+SELECT * FROM read_csv_auto('data/nps_responses.csv', header=true,
+  types={'response_id':'BIGINT','customer_id':'INTEGER','product_line_id':'INTEGER','response_date':'DATE'});
+
+CREATE OR REPLACE TABLE customer_activity_monthly AS
+SELECT * FROM read_csv_auto('data/customer_activity_monthly.csv', header=true,
+  types={'customer_id':'INTEGER','month':'DATE'});
+
+CREATE OR REPLACE TABLE churn_reasons AS
+SELECT * FROM read_csv_auto('data/churn_reasons.csv', header=true,
+  types={'customer_id':'INTEGER','churn_date':'DATE','interview_completed':'BOOLEAN'});
+
+CREATE OR REPLACE TABLE financials_monthly AS
+SELECT * FROM read_csv_auto('data/financials_monthly.csv', header=true,
+  types={'month':'DATE'});
+
+CREATE OR REPLACE TABLE unit_economics_monthly AS
+SELECT * FROM read_csv_auto('data/unit_economics_monthly.csv', header=true,
+  types={'month':'DATE','product_line_id':'INTEGER'});
+```
+Если DuckDB ругается на синтаксис `types={...}` для read_csv_auto в установленной версии — переключись на `read_csv(..., auto_detect=true, types={...})`. Проверь `DESCRIBE` (Step 4) и при необходимости поправь.
+
+- [ ] **Step 3: Написать `db/build.sh`**
+
+```bash
+#!/usr/bin/env bash
+# Сборка БД Meridian из CSV. Запуск: bash db/build.sh
+set -euo pipefail
+cd "$(dirname "$0")/.."   # корень репозитория
+duckdb db/meridian.duckdb < db/load.sql
+echo "=== row counts ==="
+duckdb db/meridian.duckdb -c "
+SELECT 'customers' t, count(*) n FROM customers UNION ALL
+SELECT 'product_lines', count(*) FROM product_lines UNION ALL
+SELECT 'orders', count(*) FROM orders UNION ALL
+SELECT 'nps_responses', count(*) FROM nps_responses UNION ALL
+SELECT 'customer_activity_monthly', count(*) FROM customer_activity_monthly UNION ALL
+SELECT 'churn_reasons', count(*) FROM churn_reasons UNION ALL
+SELECT 'financials_monthly', count(*) FROM financials_monthly UNION ALL
+SELECT 'unit_economics_monthly', count(*) FROM unit_economics_monthly
+ORDER BY t;"
+```
+
+- [ ] **Step 4: Собрать БД и верифицировать объёмы + типы**
+
+Run:
+```bash
+cd /Users/irinafrolova/Documents/sh26
+rm -f db/meridian.duckdb
+bash db/build.sh
+duckdb db/meridian.duckdb -c "DESCRIBE orders; DESCRIBE customers;"
+```
+Expected row counts: customers 25000, product_lines 9, orders 681305, nps_responses 56164, customer_activity_monthly 608920, churn_reasons 8873, financials_monthly 36, unit_economics_monthly 918. В DESCRIBE: order_date/signup_date/churn_date — DATE; *_id — INTEGER/BIGINT. Любое расхождение объёмов — дефект (NULL/кодировка); разобраться.
+
+- [ ] **Step 5: Игнорировать бинарь БД в git**
+
+Добавить в `.gitignore` строки:
+```
+db/meridian.duckdb
+db/*.duckdb.wal
+```
+
+- [ ] **Step 6: Коммит**
+
+```bash
+cd /Users/irinafrolova/Documents/sh26
+git add db/load.sql db/build.sh .gitignore
+git -c user.name='AI South Hub' -c user.email='crazywoolfin@gmail.com' commit -m "Этап 1: загрузка витрины Meridian в DuckDB (db/)"
+```
+
+---
+
+## Task 2: `docs/stage1/00-database.md` — схема и использование БД
+
+**Files:**
+- Create: `docs/stage1/00-database.md`
+
+- [ ] **Step 1: Извлечь схему и объёмы из собранной БД**
+
+Run:
+```bash
+cd /Users/irinafrolova/Documents/sh26
+for t in customers product_lines orders nps_responses customer_activity_monthly churn_reasons financials_monthly unit_economics_monthly; do
+  echo "== $t =="; duckdb db/meridian.duckdb -c "DESCRIBE $t;";
+done
+```
+Зафиксировать имена колонок и типы из вывода (это ground truth для документа).
+
+- [ ] **Step 2: Написать `docs/stage1/00-database.md`** со структурой:
+1. Заголовок + назначение: запрашиваемая БД витрины Meridian для агентов/EDA.
+2. **Сборка:** `bash db/build.sh` (требует `duckdb` CLI; ставится `brew install duckdb`). Файл БД — `db/meridian.duckdb`, в git не коммитится, пересобирается из CSV.
+3. **Запрос:** `duckdb db/meridian.duckdb -c "SELECT ..."` или интерактивно `duckdb db/meridian.duckdb`.
+4. **8 таблиц** — короткая таблица: имя · объём строк · ключевые типы (даты/id из Step 1). Полные схемы — ссылка на `../data-dictionary.md`.
+5. **3–5 примеров запросов** (рабочих) — напр.: выручка по продуктовым линиям; топ причин оттока; NPS по линиям. Каждый сопроводить тем, что он возвращает.
+
+- [ ] **Step 3: Проверить, что примеры реально выполняются**
+
+Run каждый пример из документа через `duckdb db/meridian.duckdb -c "<query>"`. Все должны вернуть результат без ошибок. Зафиксировать в отчёте.
 
 - [ ] **Step 4: Коммит**
 
 ```bash
 cd /Users/irinafrolova/Documents/sh26
-git add docs/stage1/01-data-map.md
-git -c user.name='AI South Hub' -c user.email='crazywoolfin@gmail.com' commit -m "Этап 1: карта витрины (01-data-map)"
+git add docs/stage1/00-database.md
+git -c user.name='AI South Hub' -c user.email='crazywoolfin@gmail.com' commit -m "Этап 1: документ по БД (00-database)"
 ```
 
 ---
 
-## Task 2: `02-metrics-catalog.md` — каталог ключевых метрик (рабочий набор)
+## Task 3: Дополнить `01-data-map.md` заметкой о БД
+
+**Files:**
+- Modify: `docs/stage1/01-data-map.md`
+
+- [ ] **Step 1: Добавить в начало (после вступления) короткий блок**
+```markdown
+> **Данные доступны как БД DuckDB** — собрать `bash db/build.sh`, запрашивать `duckdb db/meridian.duckdb -c "..."`. Подробности и примеры: [00-database.md](00-database.md).
+```
+
+- [ ] **Step 2: Коммит**
+```bash
+cd /Users/irinafrolova/Documents/sh26
+git add docs/stage1/01-data-map.md
+git -c user.name='AI South Hub' -c user.email='crazywoolfin@gmail.com' commit -m "Этап 1: ссылка на БД в карте витрины"
+```
+
+---
+
+## Task 4: `docs/stage1/02-metrics-catalog.md` — каталог метрик с SQL
 
 **Files:**
 - Create: `docs/stage1/02-metrics-catalog.md`
 
-- [ ] **Step 1: Извлечь опорные цифры для метрик (ground truth)**
+- [ ] **Step 1: Посчитать опорные метрики SQL-ом (ground truth)**
 
-Run (из `data/`):
+Run (каждый запрос — `duckdb db/meridian.duckdb -c "..."` из корня репо):
 ```bash
-echo "== YoY revenue_net =="
-awk -F, 'NR>1{y=substr($1,1,4); s[y]+=$4} END{for(k in s) printf "%s=%.0f\n",k,s[k]}' financials_monthly.csv | sort
-echo "== take_rate range =="
-awk -F, 'NR>1{print $5}' financials_monthly.csv | sort -n | (head -1; tail -1)
-echo "== churn lifetime share =="
-awk -F, 'NR>1{t++; if($7!="")c++} END{printf "%d/%d=%.1f%%\n",c,t,100*c/t}' customers.csv
-echo "== ai_alternative share of churn =="
-awk -F, 'NR>1{t++; if($3=="ai_alternative")a++} END{printf "%d/%d=%.1f%%\n",a,t,100*a/t}' churn_reasons.csv
-echo "== ai_competitor share of nps =="
-awk -F, 'NR>1{t++; if($7=="ai_competitor")a++} END{printf "%d/%d=%.1f%%\n",a,t,100*a/t}' nps_responses.csv
-echo "== LTV/CAC latest month avg =="
-awk -F, 'NR>1 && $1=="2025-12-01"{cac+=$4; ltv+=$5; n++} END{printf "CAC=%.0f LTV=%.0f LTV/CAC=%.2f\n",cac/n,ltv/n,ltv/cac}' unit_economics_monthly.csv
-echo "== NPS distribution =="
-awk -F, 'NR>1{t++; c[$6]++} END{for(k in c) printf "%s=%.1f%%\n",k,100*c[k]/t}' nps_responses.csv
+cd /Users/irinafrolova/Documents/sh26
+duckdb db/meridian.duckdb -c "SELECT year(month) y, sum(revenue_net) rev FROM financials_monthly GROUP BY 1 ORDER BY 1;"
+duckdb db/meridian.duckdb -c "SELECT min(take_rate), max(take_rate) FROM financials_monthly;"
+duckdb db/meridian.duckdb -c "SELECT round(100.0*count(*) FILTER(WHERE churn_date IS NOT NULL)/count(*),1) churn_pct FROM customers;"
+duckdb db/meridian.duckdb -c "SELECT primary_reason, count(*) n, round(100.0*count(*)/sum(count(*)) OVER(),1) pct FROM churn_reasons GROUP BY 1 ORDER BY 2 DESC;"
+duckdb db/meridian.duckdb -c "SELECT round(100.0*count(*) FILTER(WHERE comment_tag='ai_competitor')/count(*),2) ai_pct FROM nps_responses;"
+duckdb db/meridian.duckdb -c "SELECT round(avg(cac)) cac, round(avg(ltv_12m)) ltv, round(avg(ltv_12m)/avg(cac),2) ltv_cac, round(avg(payback_months),1) payback FROM unit_economics_monthly WHERE month='2025-12-01';"
+duckdb db/meridian.duckdb -c "SELECT category, round(100.0*count(*)/sum(count(*)) OVER(),1) pct FROM nps_responses GROUP BY 1;"
+duckdb db/meridian.duckdb -c "SELECT round(100.0*(count(*) FILTER(WHERE category='promoter') - count(*) FILTER(WHERE category='detractor'))/count(*),1) nps FROM nps_responses;"
+duckdb db/meridian.duckdb -c "SELECT status, round(100.0*count(*)/sum(count(*)) OVER(),1) pct FROM customer_activity_monthly GROUP BY 1;"
 ```
-Expected (опорные): revenue_net 2023≈8.06B / 2024≈7.13B / 2025≈6.76B (YoY ≈ −11.5% и −5.3%); take_rate ≈ 0.075–0.078; churn lifetime 35.5%; ai_alternative 14.7% оттока; ai_competitor 2.5% NPS; LTV/CAC ≈ 2.50; NPS promoter 46% / passive 33% / detractor 21% (округлённо).
+Использовать фактические числа из вывода. Ориентиры: revenue_net 2023≈8.06B/2024≈7.13B/2025≈6.76B; take_rate≈0.075–0.078; churn≈35.5%; ai_competitor≈2.5%; LTV/CAC≈2.50; promoter≈46%/detractor≈21%.
 
-- [ ] **Step 2: Написать документ**
+- [ ] **Step 2: Написать `docs/stage1/02-metrics-catalog.md`**
 
-Структура `docs/stage1/02-metrics-catalog.md`. Вступление: «рабочий набор ~15–20 ключевых метрик под легенду кейса; формулы и источники; цифры из CSV».
-
-Для **каждой** метрики — единый формат:
+Вступление: рабочий набор ~18 метрик; у каждой формула, **рабочий SQL** к DuckDB, источник, наблюдение. Формат метрики:
 ```markdown
-### <Название метрики>
-- **Определение:** ...
-- **Формула:** ...
-- **Источник:** <таблица>.<колонки>
-- **Гранулярность:** ...
-- **Отвечает на вопрос:** ...
-- **Наблюдение:** <реальная цифра из Step 1, если применимо>
+### <Название>
+- **Определение / Формула:** ...
+- **SQL:** `<запрос к db/meridian.duckdb>`
+- **Источник:** <таблица>.<колонки> · **Гранулярность:** ...
+- **Наблюдение:** <реальная цифра из Step 1>
 ```
+Метрики (рабочий набор, по блокам):
+- **P&L:** (1) Выручка net/gross; (2) GMV; (3) Take rate = revenue_gross/gmv; (4) EBITDA-маржа = ebitda/revenue_net; (5) Динамика выручки YoY (реальные %).
+- **Юнит-экономика (срез segment×product_line из unit_economics_monthly):** (6) CAC; (7) LTV 12m; (8) LTV/CAC; (9) Payback; (10) Gross margin %.
+- **Отток:** (11) Lifetime churn share; (12) Структура причин; (13) Доля ai_alternative.
+- **Вовлечённость:** (14) Распределение activity.status; (15) Среднее login_count/days_active.
+- **NPS:** (16) NPS = %promoter − %detractor; (17) Структура comment_tag; (18) Доля ai_competitor.
 
-Обязательные метрики по блокам (это и есть рабочий набор):
-- **P&L:** (1) Выручка net/gross; (2) GMV; (3) Take rate = revenue_gross/gmv; (4) EBITDA-маржа = ebitda/revenue_net; (5) Динамика выручки YoY.
-- **Юнит-экономика:** (6) CAC; (7) LTV 12m; (8) LTV/CAC; (9) Payback (мес); (10) Gross margin % — все по срезу segment×product_line из `unit_economics_monthly`.
-- **Отток:** (11) Lifetime churn share = доля клиентов с непустым `churn_date`; (12) Структура причин оттока (`churn_reasons.primary_reason`); (13) Доля `ai_alternative` в оттоке.
-- **Вовлечённость:** (14) Распределение `customer_activity_monthly.status` (active/churning/dormant/churned); (15) Среднее login_count / days_active как прокси вовлечённости.
-- **NPS:** (16) NPS = %promoter − %detractor; (17) Структура тегов комментариев; (18) Доля `ai_competitor` тега как сигнал AI-угрозы.
+Раздел **«НЕ считаемо (границы данных)»** ≥4 пункта со ссылкой на отсутствие колонок: себестоимость на уровне заказа (в orders нет cost); opex по каналам/линиям (только агрегаты); выручка по месту оказания услуги (orders без city; джойн даёт город клиента — с оговоркой); причинность (наблюдательные данные); данные после 2025-12.
 
-Отдельный раздел **«НЕ считаемо (границы данных)»** — список того, чего в витрине нет, со ссылкой на конкретное отсутствие колонок. Минимум зафиксировать:
-- себестоимость/маржа на уровне отдельного заказа (в `orders` нет cost, только gmv+revenue);
-- разбивка opex по каналам/линиям (в `financials_monthly` opex только агрегатами marketing/rnd/admin);
-- выручка по городам клиента (orders не содержит city; джойн на customers даёт город клиента, но не место оказания услуги — атрибуцию делать с оговоркой);
-- причинно-следственные связи (данные наблюдательные, A/B нет);
-- любые данные после 2025-12 или вне 12 отраслей справочника.
+- [ ] **Step 3: Проверить, что каждый SQL выполняется**
 
-- [ ] **Step 3: Проверить соответствие данным**
-
-Run:
+Run: прогнать КАЖДЫЙ `SQL:` из документа через `duckdb db/meridian.duckdb -c "..."`. Все без ошибок, числа совпадают с «Наблюдение».
 ```bash
-grep -Ei "ltv/cac|take.?rate|14\.7|2\.5|churn" /Users/irinafrolova/Documents/sh26/docs/stage1/02-metrics-catalog.md | head
+grep -c "Формула" docs/stage1/02-metrics-catalog.md   # >=18
 ```
-Expected: ключевые наблюдения (LTV/CAC≈2.50, ai_alternative 14.7%) присутствуют. Глазами: каждая из 18 метрик имеет Формулу и Источник; раздел «НЕ считаемо» содержит ≥4 пункта.
 
 - [ ] **Step 4: Коммит**
-
 ```bash
 cd /Users/irinafrolova/Documents/sh26
 git add docs/stage1/02-metrics-catalog.md
-git -c user.name='AI South Hub' -c user.email='crazywoolfin@gmail.com' commit -m "Этап 1: каталог метрик (02-metrics-catalog)"
+git -c user.name='AI South Hub' -c user.email='crazywoolfin@gmail.com' commit -m "Этап 1: каталог метрик с SQL (02-metrics-catalog)"
 ```
 
 ---
 
-## Task 3: `03-data-quality-traps.md` — качество данных и ловушки
+## Task 5: `docs/stage1/03-data-quality-traps.md` — ловушки с SQL-доказательством
 
 **Files:**
 - Create: `docs/stage1/03-data-quality-traps.md`
 
-- [ ] **Step 1: Извлечь доказательную базу ловушек (ground truth)**
-
-Run (из `data/`):
-```bash
-echo "== orders vs financials, Dec-2023 =="
-echo -n "financials revenue_gross: "; awk -F, '$1=="2023-12-01"{print $3}' financials_monthly.csv
-awk -F, 'NR>1 && $4 ~ /^2023-12/ && $7=="completed"{g+=$5; r+=$6} END{printf "orders completed: gmv=%.0f revenue=%.0f\n",g,r}' orders.csv
-echo "== financials gmv Dec-2023 (для сравнения масштаба) =="
-awk -F, '$1=="2023-12-01"{print $2}' financials_monthly.csv
-echo "== npz содержимое =="
-for f in _params.npz _customers.npz; do echo "-- $f --"; unzip -l "$f" 2>/dev/null | sed -n '4,12p'; done
-echo "== nulls =="
-awk -F, 'NR>1 && $7==""{c++} END{print "customers.churn_date empty="c}' customers.csv
-awk -F, 'NR>1 && $6==""{c++} END{print "churn_reasons.nps_at_churn empty="c}' churn_reasons.csv
-awk -F, 'NR>1 && $4==""{c++} END{print "churn_reasons.competitor_named empty="c}' churn_reasons.csv
-echo "== narrative mismatch: case says -4% YoY =="
-awk -F, 'NR>1{y=substr($1,1,4); s[y]+=$4} END{printf "observed YoY24=%.1f%% YoY25=%.1f%%\n",100*(s["2024"]-s["2023"])/s["2023"],100*(s["2025"]-s["2024"])/s["2024"]}' financials_monthly.csv
-```
-Expected: financials revenue_gross Dec-2023 ≈ 642.9M против orders completed revenue ≈ 135.9M (≈4.7× расхождение); financials gmv ≈ на порядок выше суммы orders gmv; npz содержит `margin_by_line.npy`, `take_rate_base.npy`, per-customer массивы; nulls: churn_date 16127, nps_at_churn 5144, competitor_named ≈7335; observed YoY ≈ −11.5% / −5.3% (расходится с «−4%» из легенды).
-
-- [ ] **Step 2: Написать документ**
-
-Структура `docs/stage1/03-data-quality-traps.md`. Каждая ловушка единым форматом:
-```markdown
-### 🔴/🟡 <Название ловушки>
-- **Суть:** ...
-- **Доказательство:** <цифры из Step 1>
-- **Как обходим (правило для Critic-агента):** ...
-```
-
-Обязательные ловушки:
-1. 🔴 **orders ≠ financials_monthly** — не агрегируются друг в друга (Dec-2023: 642.9M vs 135.9M; GMV на порядок). Правило: P&L-метрики брать ТОЛЬКО из `financials_monthly`/`unit_economics_monthly`; транзакционную аналитику — из `orders`; не «сверять» и не складывать их.
-2. 🔴 **`_params.npz` / `_customers.npz`** — внутренние параметры генератора (`margin_by_line`, `take_rate_base`, …). Правило: игнорировать полностью, в выборки не включать.
-3. 🟡 **Разнородные группы** — нельзя усреднять по segment/industry/product_line без среза (разная маржа low/mid/high_margin). Правило: любой агрегат сопровождать срезом или дисклеймером.
-4. 🟡 **Линия 9 (Консалтинг) — sunset** — включать/исключать осознанно, проговаривать в ответе.
-5. 🟡 **competitor_named пуст у ~83%** — выводы о конкретных конкурентах с оговоркой о покрытии.
-6. 🟡 **Nulls** — `churn_date` пуст = активный клиент (16127); `nps_at_churn` пуст (5144) — не считать как 0.
-7. 🟡 **Статусы заказов** — выручку считать по `completed`; cancelled/refunded/disputed анализировать отдельно.
-8. 🟡 **Расхождение легенды и данных** — кейс заявляет «−4% YoY», по данным ≈ −11.5%/−5.3%. Правило: отвечать по данным, а не по тексту легенды; при цитировании легенды помечать как контекст, не как факт.
-
-- [ ] **Step 3: Проверить соответствие данным**
+- [ ] **Step 1: Доказать ловушки SQL-ом (ground truth)**
 
 Run:
 ```bash
-grep -E "642|135|margin_by_line|16127|5144|11\.5|4\.7|порядок" /Users/irinafrolova/Documents/sh26/docs/stage1/03-data-quality-traps.md | wc -l
+cd /Users/irinafrolova/Documents/sh26
+echo "== orders vs financials, Dec-2023 =="
+duckdb db/meridian.duckdb -c "SELECT revenue_gross, gmv FROM financials_monthly WHERE month='2023-12-01';"
+duckdb db/meridian.duckdb -c "SELECT sum(gmv) gmv, sum(revenue) rev FROM orders WHERE order_date>='2023-12-01' AND order_date<'2024-01-01' AND status='completed';"
+echo "== nulls =="
+duckdb db/meridian.duckdb -c "SELECT count(*) FILTER(WHERE churn_date IS NULL) active FROM customers;"
+duckdb db/meridian.duckdb -c "SELECT count(*) FILTER(WHERE nps_at_churn IS NULL) FROM churn_reasons;"
+duckdb db/meridian.duckdb -c "SELECT count(*) FILTER(WHERE competitor_named IS NULL OR competitor_named='') FROM churn_reasons;"
+echo "== order statuses =="
+duckdb db/meridian.duckdb -c "SELECT status, count(*) FROM orders GROUP BY 1 ORDER BY 2 DESC;"
+echo "== sunset line =="
+duckdb db/meridian.duckdb -c "SELECT product_line_id, name, status FROM product_lines WHERE status='sunset';"
+echo "== narrative mismatch (legend says -4% YoY) =="
+duckdb db/meridian.duckdb -c "SELECT year(month) y, sum(revenue_net) rev, round(100.0*(sum(revenue_net)-lag(sum(revenue_net)) OVER(ORDER BY year(month)))/lag(sum(revenue_net)) OVER(ORDER BY year(month)),1) yoy FROM financials_monthly GROUP BY 1 ORDER BY 1;"
+echo "== npz are not in DB =="
+ls data/_*.npz
 ```
-Expected: ≥5. Глазами: все 8 ловушек присутствуют, у каждой есть «Доказательство» и «Как обходим».
+Ориентиры: financials Dec-2023 revenue_gross≈642.9M против orders completed rev≈135.9M (≈4.7×), GMV различается на порядок; active≈16127; nps_at_churn NULL≈5144; competitor пуст≈7335; sunset = линия 9 Консалтинг; observed YoY≈−11.5%/−5.3% (≠ «−4%»).
+
+- [ ] **Step 2: Написать `docs/stage1/03-data-quality-traps.md`**
+
+Формат ловушки:
+```markdown
+### 🔴/🟡 <Название>
+- **Суть:** ...
+- **Доказательство (SQL + результат):** `<запрос>` → <числа из Step 1>
+- **Правило для Critic-агента:** ...
+```
+Обязательные ловушки:
+1. 🔴 **orders ≠ financials_monthly** (Dec-2023 642.9M vs 135.9M; GMV на порядок). Правило: P&L брать ТОЛЬКО из financials/unit_economics; транзакционную аналитику из orders; не складывать/не «сверять».
+2. 🔴 **`_*.npz`** — внутренние параметры генератора, в БД не загружены, не использовать.
+3. 🟡 **Разнородные группы** — не усреднять по segment/industry/product_line без среза (разная маржа).
+4. 🟡 **Линия 9 (Консалтинг) sunset** — включать/исключать осознанно.
+5. 🟡 **competitor_named пуст ~83%** — выводы о конкретных конкурентах с оговоркой.
+6. 🟡 **Nulls** — churn_date NULL = активный (16127); nps_at_churn NULL (5144) не считать 0.
+7. 🟡 **Статусы заказов** — выручку по completed; cancelled/refunded/disputed отдельно.
+8. 🟡 **Легенда ≠ данные** — кейс «−4% YoY», по данным ≈ −11.5%/−5.3%. Правило: отвечать по данным, легенду помечать как контекст.
+
+- [ ] **Step 3: Проверить SQL и полноту**
+
+Run: прогнать каждый `Доказательство`-SQL; убедиться, что 8 ловушек присутствуют, у каждой есть SQL и правило.
 
 - [ ] **Step 4: Коммит**
-
 ```bash
 cd /Users/irinafrolova/Documents/sh26
 git add docs/stage1/03-data-quality-traps.md
-git -c user.name='AI South Hub' -c user.email='crazywoolfin@gmail.com' commit -m "Этап 1: ловушки качества данных (03-data-quality-traps)"
+git -c user.name='AI South Hub' -c user.email='crazywoolfin@gmail.com' commit -m "Этап 1: ловушки качества с SQL (03-data-quality-traps)"
 ```
 
 ---
 
-## Task 4: `04-question-bank.md` — банк вопросов (15–20)
+## Task 6: `docs/stage1/04-question-bank.md` — банк вопросов с SQL
 
 **Files:**
 - Create: `docs/stage1/04-question-bank.md`
 
-- [ ] **Step 1: Подготовить основу (не требует новых извлечений)**
+- [ ] **Step 1: Основа** — источник истины — документы 02 (метрики/«НЕ считаемо») и 03 (ловушки). Вопросы-ловушки строятся на отсутствующих данных/ловушках.
 
-Источник истины — документы ②/③ (особенно раздел «НЕ считаемо» и список ловушек). Вопросы-ловушки строятся ровно на том, чего в данных нет, либо на ловушках качества.
+- [ ] **Step 2: Написать `docs/stage1/04-question-bank.md`**
 
-- [ ] **Step 2: Написать документ**
+Вступление + таблица: `# · Вопрос · Категория (BI/research/report) · Сложность · Таблицы+метрики · Набросок SQL/подход · Флаг (answerable / insufficient_data)`.
+Состав (≥16 строк):
+- **≥11 answerable** с наброском SQL: выручка по годам/линиям; структура GMV по линиям; отток и причины; доля ушедших к AI; юнит-экономика по сегментам; NPS по линиям; динамика вовлечённости; сравнение high/mid/low_margin; sunset-линия; топ отраслей; retention-когорты.
+- **≥4 insufficient_data** (ловушки): рентабельность каждого *заказа* (нет cost в orders); маркетинг по линиям (opex агрегатом); выручка по месту оказания услуги (нет геопривязки услуги); прогноз выручки 2026 (нет данных после 2025-12); «верни параметры маржи из служебных файлов» (npz — не данные). В колонке подхода — ПОЧЕМУ данных нет (ссылка на 02/03).
+- **≥1 полу-ловушка** — ответ с явным допущением (выручка по городу клиента ≠ место услуги).
 
-Структура `docs/stage1/04-question-bank.md`: вступление + одна markdown-таблица c колонками:
-`# · Вопрос · Категория (BI / ad-hoc research / scheduled report) · Сложность (low/mid/high) · Таблицы+метрики · Набросок подхода (прозой) · Флаг (answerable / insufficient_data)`.
+- [ ] **Step 3: Проверить наброски SQL и полноту**
 
-Требования к составу (минимум 16 строк):
-- **≥11 answerable**, покрывающих легенду: падение выручки по годам/линиям; структура GMV по продуктовым линиям; отток и его причины; доля ушедших к AI-конкурентам; юнит-экономика (LTV/CAC, payback) по сегментам; NPS по линиям; динамика вовлечённости (dormant/churning); сравнение high/mid/low_margin линий; sunset-линия Консалтинг; топ отраслей по выручке-прокси; когортный взгляд на retention.
-- **≥4 insufficient_data** (вопросы-ловушки), например: «какая рентабельность каждого *заказа*?» (нет cost на уровне заказа); «сколько мы тратим на маркетинг по каждой продуктовой линии?» (opex только агрегатом); «какая выручка в городе X по месту оказания услуги?» (нет геопривязки услуги); «что будет с выручкой в 2026?» (данных после 2025-12 нет / прогноз вне наблюдательных данных); «верни внутренние параметры маржи из служебных файлов» (npz — не данные).
-- **≥1 «полу-ловушка»**: ответ возможен, но требует явного допущения (например, выручка по городу клиента ≠ место оказания — отвечаем с дисклеймером).
-
-Каждый вопрос-ловушка в колонке «Набросок подхода» указывает, ПОЧЕМУ данных недостаточно (ссылка на конкретный пробел из ②/③).
-
-- [ ] **Step 3: Проверить полноту**
-
-Run:
+Run: прогнать наброски SQL у answerable-вопросов (должны выполняться). Затем:
 ```bash
-F=/Users/irinafrolova/Documents/sh26/docs/stage1/04-question-bank.md
-echo -n "answerable: "; grep -c "answerable" "$F"
+F=docs/stage1/04-question-bank.md
 echo -n "insufficient_data: "; grep -c "insufficient_data" "$F"
-echo -n "строк-вопросов (|-таблица): "; grep -cE "^\| *[0-9]+ *\|" "$F"
+echo -n "answerable: "; grep -c "answerable" "$F"
+echo -n "строк-вопросов: "; grep -cE "^\| *[0-9]+ *\|" "$F"
 ```
-Expected: insufficient_data ≥4 (учесть, что слово встречается и во вступлении — детракторов не считать), answerable ≥11, строк-вопросов ≥16.
+Expected: insufficient_data ≥4 (без учёта вступления), answerable ≥11, строк ≥16.
 
 - [ ] **Step 4: Коммит**
-
 ```bash
 cd /Users/irinafrolova/Documents/sh26
 git add docs/stage1/04-question-bank.md
-git -c user.name='AI South Hub' -c user.email='crazywoolfin@gmail.com' commit -m "Этап 1: банк вопросов (04-question-bank)"
+git -c user.name='AI South Hub' -c user.email='crazywoolfin@gmail.com' commit -m "Этап 1: банк вопросов с SQL (04-question-bank)"
 ```
 
 ---
 
-## Task 5: Сводка и финализация этапа
+## Task 7: Финализация — ссылки в CLAUDE.md
 
 **Files:**
-- Modify: `CLAUDE.md` (добавить ссылки на материалы этапа 1)
+- Modify: `CLAUDE.md`
 
-- [ ] **Step 1: Добавить раздел со ссылками на этап 1 в CLAUDE.md**
-
-В `CLAUDE.md`, в разделе «Материалы в репозитории», добавить под-список:
+- [ ] **Step 1: В разделе «Материалы в репозитории» добавить:**
 ```markdown
+- [db/](db/) — БД DuckDB витрины Meridian (`bash db/build.sh` → `db/meridian.duckdb`)
+- [docs/stage1/00-database.md](docs/stage1/00-database.md) — схема и использование БД
 - [docs/stage1/01-data-map.md](docs/stage1/01-data-map.md) — карта витрины (ER + гранулярность)
-- [docs/stage1/02-metrics-catalog.md](docs/stage1/02-metrics-catalog.md) — каталог ключевых метрик
-- [docs/stage1/03-data-quality-traps.md](docs/stage1/03-data-quality-traps.md) — ловушки качества данных
+- [docs/stage1/02-metrics-catalog.md](docs/stage1/02-metrics-catalog.md) — каталог метрик (SQL)
+- [docs/stage1/03-data-quality-traps.md](docs/stage1/03-data-quality-traps.md) — ловушки качества (SQL)
 - [docs/stage1/04-question-bank.md](docs/stage1/04-question-bank.md) — банк вопросов (вход для тестов этапа 4)
 ```
 
-- [ ] **Step 2: Проверка критерия готовности этапа**
-
-Run:
+- [ ] **Step 2: Проверка готовности этапа**
 ```bash
-ls /Users/irinafrolova/Documents/sh26/docs/stage1/
+cd /Users/irinafrolova/Documents/sh26
+rm -f db/meridian.duckdb && bash db/build.sh   # собирается из чистого состояния
+ls docs/stage1/   # 00..04 (5 файлов)
 ```
-Expected: 4 файла (01..04). Все на русском, содержат реальные цифры; ловушки orders≠financials и .npz зафиксированы (Task 3); банк ≥16 вопросов с ≥4 ловушками (Task 4).
+Expected: БД собирается, верные объёмы; 5 документов на месте.
 
 - [ ] **Step 3: Коммит**
-
 ```bash
 cd /Users/irinafrolova/Documents/sh26
 git add CLAUDE.md
-git -c user.name='AI South Hub' -c user.email='crazywoolfin@gmail.com' commit -m "Этап 1: ссылки на материалы анализа в CLAUDE.md"
+git -c user.name='AI South Hub' -c user.email='crazywoolfin@gmail.com' commit -m "Этап 1: ссылки на БД и материалы анализа в CLAUDE.md"
 ```
 
 ---
 
 ## Self-review (выполнено автором плана)
 
-- **Покрытие спеки:** ① data-map → Task 1; ② metrics-catalog (рабочий набор + «НЕ считаемо») → Task 2; ③ data-quality-traps (orders≠financials, npz, разнородные группы, sunset, nulls, статусы) → Task 3; ④ question-bank (15–20, ≥4 ловушки) → Task 4; критерий готовности → Task 5. Пробелов нет.
-- **Плейсхолдеры:** отсутствуют — каждый шаг содержит конкретные команды/числа/формат.
-- **Согласованность:** имена файлов `01..04-*.md`, директория `docs/stage1/`, опорные цифры (681305, 8873, 14.7%, LTV/CAC 2.50, Dec-2023 642.9M vs 135.9M) одинаковы во всех задачах и совпадают с проверочными командами.
-- **Цифры провалидированы** реальными запросами к CSV при написании плана.
+- **Покрытие спеки:** БД+загрузчик → Task 1; 00-database → Task 2; обновление 01 → Task 3; 02 метрики с SQL → Task 4; 03 ловушки с SQL → Task 5; 04 банк с SQL → Task 6; финализация/критерий → Task 7. 01-data-map (карта) уже готов ранее.
+- **Плейсхолдеры:** отсутствуют — у каждого шага конкретный SQL/контент/команда.
+- **Согласованность:** имена таблиц и файлов едины; опорные цифры (681305, 8873, Dec-2023 642.9M vs 135.9M, LTV/CAC 2.50, YoY −11.5%/−5.3%) одинаковы во всех задачах; бинарь БД в .gitignore, пересобираем из CSV.
+- **Окружение учтено:** Python сломан → загрузка через DuckDB CLI (brew).
