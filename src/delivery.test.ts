@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { Inbox, deliver, reportToText } from "./delivery.ts";
+import { Inbox, deliver, reportToText, chartToAscii } from "./delivery.ts";
 import type { Report } from "./report.ts";
 
 const rep: Report = { generatedAt: "2026-06-11T09:00:00Z", items: [
@@ -32,6 +32,27 @@ test("reportToText: HTML-форматирование, маркеры, чело�
   assert.ok(!t.includes("2026-06-11T09:00:00Z"), "сырой ISO не должен попадать в текст");
   assert.match(t, /⚠️ <b>Выручка &lt;тест&gt;<\/b>/); // alert + экранирование HTML
   assert.match(t, /❔ <b>Прогноз<\/b>/);              // insufficient → ❔
+});
+
+test("chartToAscii рисует Unicode-бары в <pre> с подписями и значениями", () => {
+  const chart = {
+    type: "bar" as const, title: "Выручка", x: "line", y: "rev",
+    data: [
+      { line: "Разработка и IT", rev: 1167000000 },
+      { line: "Маркетинг", rev: 783000000 },
+      { line: "Консалтинг", rev: 549000000 },
+    ],
+  };
+  const out = chartToAscii(chart);
+  assert.match(out, /^<pre>/);
+  assert.match(out, /█/);
+  assert.match(out, /Разработка и IT/);
+  assert.match(out, /1\.17 млрд/);
+});
+
+test("chartToAscii: пустые/одиночные данные → пустая строка", () => {
+  assert.equal(chartToAscii({ type: "bar" as const, title: "x", x: "a", y: "b", data: [] }), "");
+  assert.equal(chartToAscii({ type: "bar" as const, title: "x", x: "a", y: "b", data: [{ a: "one", b: 5 }] }), "");
 });
 
 test("deliver шлёт в Telegram с parse_mode HTML", async () => {

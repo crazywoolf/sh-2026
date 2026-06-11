@@ -28,6 +28,35 @@ function clip(s: string, n: number): string {
   return cut.replace(/\s+\S*$/, "") + "…";
 }
 
+function compactNum(v: number): string {
+  const a = Math.abs(v);
+  if (a >= 1e9) return (v / 1e9).toFixed(2) + " млрд";
+  if (a >= 1e6) return (v / 1e6).toFixed(0) + " млн";
+  if (a >= 1e3) return (v / 1e3).toFixed(0) + " тыс";
+  return Number.isInteger(v) ? String(v) : v.toFixed(2);
+}
+
+// Unicode-барчарт в моноширинном <pre> — самодостаточная визуализация без внешних сервисов.
+export function chartToAscii(chart: NonNullable<Report["items"][number]["chart"]>): string {
+  const x = chart.x;
+  const y = Array.isArray(chart.y) ? chart.y[0] : chart.y;
+  const rows = (chart.data ?? [])
+    .map((row) => ({ label: String((row as Record<string, unknown>)[x] ?? ""), value: Number((row as Record<string, unknown>)[y]) }))
+    .filter((r) => r.label && Number.isFinite(r.value))
+    .slice(0, 8);
+  if (rows.length < 2) return "";
+  const max = Math.max(...rows.map((r) => Math.abs(r.value)));
+  if (max <= 0) return "";
+  const W = 12;
+  const labelLen = Math.min(18, Math.max(...rows.map((r) => r.label.length)));
+  const lines = rows.map((r) => {
+    const label = r.label.length > labelLen ? r.label.slice(0, labelLen - 1) + "…" : r.label.padEnd(labelLen);
+    const n = Math.max(1, Math.round((Math.abs(r.value) / max) * W));
+    return `${label} ${"█".repeat(n)} ${compactNum(r.value)}`;
+  });
+  return `<pre>${escapeHtml(lines.join("\n"))}</pre>`;
+}
+
 // HTML-форматирование отчёта для Telegram (parse_mode=HTML).
 export function reportToText(r: Report): string {
   const lines: string[] = [
@@ -39,6 +68,10 @@ export function reportToText(r: Report): string {
     const mark = i.insufficient_data ? "❔" : i.alert ? "⚠️" : "✅";
     lines.push(`${mark} <b>${escapeHtml(i.title)}</b>`);
     lines.push(escapeHtml(clip(i.response, 240)));
+    if (i.chart) {
+      const bars = chartToAscii(i.chart);
+      if (bars) lines.push(bars);
+    }
     lines.push("");
   }
   lines.push("<i>Автоотчёт Meridian · собран по расписанию</i>");
