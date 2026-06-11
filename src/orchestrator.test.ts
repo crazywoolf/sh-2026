@@ -70,3 +70,14 @@ test("research: часть под-вопросов без данных → insuf
   assert.match(r.response, /хороший ответ/);
   assert.ok(!r.response.includes("данных недостаточно"));
 });
+
+test("ответ содержит plan и sub_answers; передаёт context/preferResearch в plan", async () => {
+  let seenOpts: unknown;
+  const r = await runPipeline(agents({
+    plan: async (_q, opts) => { seenOpts = opts; return { mode: "research", reasoning: "", sub_questions: ["A", "B"] }; },
+  }), { message: "сложный" }, { context: [{ question: "q", answer: "a" }], preferResearch: true });
+  assert.equal(r.plan?.mode, "research");
+  assert.equal(r.plan?.sub_questions.length, 2);
+  assert.equal(r.sub_answers?.length, 2);
+  assert.deepEqual((seenOpts as { preferResearch?: boolean }).preferResearch, true);
+});

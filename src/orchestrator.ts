@@ -3,9 +3,10 @@ import type {
   UserQuery, FinalResponse, TraceEntry, PlannerOutput,
   ExtractorOutput, AnalystOutput, CriticOutput, VizOutput,
 } from "./contracts/types.ts";
+import type { Turn } from "./session/store.ts";
 
 export type Agents = {
-  plan: (q: string) => Promise<PlannerOutput>;
+  plan: (q: string, opts?: { context?: Turn[]; preferResearch?: boolean }) => Promise<PlannerOutput>;
   extract: (q: string, guidance?: string) => Promise<ExtractorOutput>;
   analyze: (q: string, ext: ExtractorOutput, guidance?: string) => Promise<AnalystOutput>;
   critique: (q: string, ext: ExtractorOutput, ana: AnalystOutput) => Promise<CriticOutput>;
@@ -37,16 +38,22 @@ async function answerOne(a: Agents, q: string, trace: TraceEntry[]) {
   return { ext, ana, rejected: false };
 }
 
-export async function runPipeline(a: Agents, query: UserQuery): Promise<FinalResponse> {
+export async function runPipeline(
+  a: Agents,
+  query: UserQuery,
+  runOpts?: { context?: Turn[]; preferResearch?: boolean },
+): Promise<FinalResponse> {
   const trace: TraceEntry[] = [];
   const session_id = query.session_id ?? `s-${randomUUID()}`;
-  const planned = await a.plan(query.message);
+  const planned = await a.plan(query.message, runOpts);
   trace.push({ agent: "planner", note: planned.mode });
+  const planSummary = { mode: planned.mode, sub_questions: planned.sub_questions };
 
   if (planned.mode === "insufficient") {
     return {
       response: `Недостаточно данных для ответа: ${planned.reasoning}`,
       assumptions: [], trace, chart: null, insufficient_data: true, session_id,
+      plan: planSummary, sub_answers: [],
     };
   }
 
@@ -54,6 +61,7 @@ export async function runPipeline(a: Agents, query: UserQuery): Promise<FinalRes
     return {
       response: `Недостаточно данных для надёжного ответа: план не содержит под-вопросов.`,
       assumptions: [], trace, chart: null, insufficient_data: true, session_id,
+      plan: planSummary, sub_answers: [],
     };
   }
 
@@ -62,11 +70,8 @@ export async function runPipeline(a: Agents, query: UserQuery): Promise<FinalRes
     results.push(await answerOne(a, sub, trace));
   }
 
-  // Под-вопрос «удался», если Critic не отклонил и данные достаточны.
   const ok = results.filter((r) => !r.rejected && r.ext.data_sufficient);
-  // insufficient — только если НИ ОДИН под-вопрос не дал данных (не «любой провалился»).
   const insufficient = ok.length === 0;
-  // Синтез — только из успешных под-вопросов (без шума «данных недостаточно» от провалившихся).
   const used = ok.length > 0 ? ok : results;
   const primary = used[used.length - 1];
   const answer = used.length > 1
@@ -80,5 +85,6 @@ export async function runPipeline(a: Agents, query: UserQuery): Promise<FinalRes
   return {
     response: insufficient ? `Недостаточно данных для надёжного ответа. ${answer}` : answer,
     assumptions, trace, chart: viz.chart, insufficient_data: insufficient, session_id,
+    plan: planSummary, sub_answers: used.map((r) => r.ana.answer),
   };
 }

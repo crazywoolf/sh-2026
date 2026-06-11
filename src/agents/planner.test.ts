@@ -17,3 +17,11 @@ test("невозможный вопрос → insufficient", async () => {
   const r = await plan(c, "прогноз на 2030");
   assert.equal(r.mode, "insufficient");
 });
+
+test("prefer_research передаётся, контекст склеивается в user-промпт (не падает)", async () => {
+  let seenUser = "";
+  const c: LLMClient = { complete: async (_s, u) => { seenUser = u; return '{"mode":"research","reasoning":"r","sub_questions":["A","B"]}'; } };
+  const r = await plan(c, "а по сегментам?", { context: [{ question: "LTV/CAC?", answer: "по сегментам..." }], preferResearch: true });
+  assert.equal(r.mode, "research");
+  assert.match(seenUser, /LTV\/CAC/);
+});
