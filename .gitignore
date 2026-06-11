@@ -10,3 +10,8 @@ db/*.duckdb.wal
 
 # Локально скачанный DuckDB CLI
 .tools/
+
+# Node / TypeScript
+node_modules/
+dist/
+.env
