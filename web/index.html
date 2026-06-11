@@ -1,1 +1,45 @@
-<!doctype html><html lang="ru"><head><meta charset="utf-8"><title>Meridian</title></head><body><div id="app">Meridian</div></body></html>
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Meridian — AI-аналитик</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+</head>
+<body>
+  <header>
+    <h1>Meridian</h1>
+    <span class="sub">AI-аналитик для совета директоров</span>
+  </header>
+  <nav class="tabs">
+    <button class="tab active" data-tab="chat">Диалоговый BI</button>
+    <button class="tab" data-tab="research">Ad-hoc исследование</button>
+    <button class="tab" data-tab="reports">Отчёты по расписанию</button>
+  </nav>
+  <main>
+    <section id="chat" class="pane">
+      <div id="chat-log"></div>
+      <div class="row">
+        <input id="chat-input" type="text" placeholder="Спросите про выручку, отток, юнит-экономику…" />
+        <button class="primary" id="chat-send">Спросить</button>
+      </div>
+    </section>
+    <section id="research" class="pane hidden">
+      <div id="research-log"></div>
+      <div class="row">
+        <input id="research-input" type="text" placeholder="Сложный вопрос с гипотезой — система проведёт мини-исследование…" />
+        <button class="primary" id="research-send">Исследовать</button>
+      </div>
+    </section>
+    <section id="reports" class="pane hidden">
+      <div class="row">
+        <button class="primary" id="report-now">Собрать отчёт сейчас</button>
+        <span class="sub" style="align-self:center">Расписание: каждый пн 9:00 — авто-сборка и отправка</span>
+      </div>
+      <div id="reports-out"></div>
+    </section>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>
