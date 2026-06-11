@@ -1,0 +1,5 @@
+# Большие/служебные данные
+data/*.zip
+data/_*.npz
+.claude/settings.local.json
+.DS_Store
