@@ -53,3 +53,20 @@ test("session_id генерируется, если не передан", async 
   assert.ok(r.session_id.startsWith("s-"));
   assert.ok(r.session_id.length > 3);
 });
+
+test("research: часть под-вопросов без данных → insufficient=false, синтез только из успешных", async () => {
+  const r = await runPipeline(agents({
+    plan: async () => ({ mode: "research", reasoning: "", sub_questions: ["good", "bad"] }),
+    extract: async (q) => ({
+      approach: "free_sql", sql: "", columns: [], rows: q === "good" ? [{ a: 1 }] : [],
+      row_count: q === "good" ? 1 : 0, data_sufficient: q === "good", notes: "", assumptions: [],
+    }),
+    analyze: async (q) => ({
+      answer: q === "good" ? "хороший ответ" : "данных недостаточно",
+      key_findings: [], method: "", assumptions: [], caveats: [], confidence: "high",
+    }),
+  }), { message: "сложный" });
+  assert.equal(r.insufficient_data, false);
+  assert.match(r.response, /хороший ответ/);
+  assert.ok(!r.response.includes("данных недостаточно"));
+});

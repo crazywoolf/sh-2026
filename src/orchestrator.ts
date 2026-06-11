@@ -62,10 +62,15 @@ export async function runPipeline(a: Agents, query: UserQuery): Promise<FinalRes
     results.push(await answerOne(a, sub, trace));
   }
 
-  const insufficient = results.some((r) => r.rejected || !r.ext.data_sufficient);
-  const primary = results[results.length - 1];
-  const answer = results.length > 1
-    ? results.map((r, i) => `${i + 1}. ${r.ana.answer}`).join("\n")
+  // Под-вопрос «удался», если Critic не отклонил и данные достаточны.
+  const ok = results.filter((r) => !r.rejected && r.ext.data_sufficient);
+  // insufficient — только если НИ ОДИН под-вопрос не дал данных (не «любой провалился»).
+  const insufficient = ok.length === 0;
+  // Синтез — только из успешных под-вопросов (без шума «данных недостаточно» от провалившихся).
+  const used = ok.length > 0 ? ok : results;
+  const primary = used[used.length - 1];
+  const answer = used.length > 1
+    ? used.map((r, i) => `${i + 1}. ${r.ana.answer}`).join("\n")
     : primary.ana.answer;
 
   const viz = insufficient ? { chart: null, rationale: "" } : await a.visualize(primary.ana, primary.ext);
