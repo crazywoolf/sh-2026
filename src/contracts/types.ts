@@ -42,8 +42,8 @@ export const CriticOutputSchema = z.object({
   verdict: z.enum(["approved", "revise", "reject"]),
   checks: z.array(z.object({ name: z.string(), passed: z.boolean(), comment: z.string() })),
   issues: z.array(z.string()),
-  target: z.enum(["extractor", "analyst"]).optional(),
-  guidance: z.string().optional(),
+  target: z.enum(["extractor", "analyst"]).nullish(),
+  guidance: z.string().nullish(),
 });
 export type CriticOutput = z.infer<typeof CriticOutputSchema>;
 
@@ -52,7 +52,7 @@ export const ChartSchema = z.object({
   title: z.string(),
   x: z.string(),
   y: z.union([z.string(), z.array(z.string())]),
-  series: z.string().optional(),
+  series: z.string().nullish(),
   data: z.array(z.record(z.unknown())),
 });
 

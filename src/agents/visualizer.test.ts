@@ -22,3 +22,9 @@ test("может вернуть null-chart", async () => {
   const r = await visualize(c, ana, ext);
   assert.equal(r.chart, null);
 });
+
+test("кривой вывод LLM (chart строкой) → деградация к chart=null, без падения", async () => {
+  const c = fake('{"chart":"bar","rationale":"x"}');
+  const r = await visualize(c, ana, ext);
+  assert.equal(r.chart, null);
+});

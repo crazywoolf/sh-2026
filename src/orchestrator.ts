@@ -26,11 +26,12 @@ async function answerOne(a: Agents, q: string, trace: TraceEntry[]) {
     if (crit.verdict === "approved" || crit.verdict === "reject") {
       return { ext, ana, rejected: crit.verdict === "reject" };
     }
+    const guidance = crit.guidance ?? undefined;
     if (crit.target === "extractor") {
-      ext = await a.extract(q, crit.guidance);
+      ext = await a.extract(q, guidance);
       trace.push({ agent: "extractor", sql: ext.sql, rows: ext.row_count });
     }
-    ana = await a.analyze(q, ext, crit.guidance);
+    ana = await a.analyze(q, ext, guidance);
     trace.push({ agent: "analyst", note: ana.method });
   }
   return { ext, ana, rejected: false };

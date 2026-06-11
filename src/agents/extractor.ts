@@ -7,8 +7,8 @@ import { METRICS, findMetric } from "../metrics/library.ts";
 
 const PlanSchema = z.object({
   approach: z.enum(["metric_template", "free_sql"]),
-  metric_id: z.string().optional(),
-  sql: z.string().optional(),
+  metric_id: z.string().nullish(),
+  sql: z.string().nullish(),
   reason: z.string(),
 });
 
