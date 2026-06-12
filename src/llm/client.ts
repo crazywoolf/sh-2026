@@ -35,11 +35,16 @@ export function resolveLLMConfig(env: NodeJS.ProcessEnv = process.env): LLMConfi
 
 export function createLLMClient(): LLMClient {
   const cfg = resolveLLMConfig();
+  // Таймаут на КАЖДЫЙ вызов LLM + 1 ретрай: чтобы один зависший вызов YandexGPT
+  // не вешал весь запрос навсегда (защита от HTTP 0 у клиента). Настраивается LLM_TIMEOUT_MS.
+  const timeout = Number(process.env.LLM_TIMEOUT_MS ?? 30000);
   const client = new OpenAI({
     apiKey: cfg.apiKey,
     baseURL: cfg.baseURL,
     project: cfg.project,
     defaultHeaders: cfg.defaultHeaders,
+    timeout,
+    maxRetries: 1,
   });
   return {
     async complete(system, user, opts) {

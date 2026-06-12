@@ -22,7 +22,18 @@ export type ServerDeps = {
 
 const PATHS = ["/api/chat", "/api/v1/chat", "/chat", "/api/ask", "/api/query"];
 const WEB = resolve(process.cwd(), "web");
+const pipelineTimeoutMs = () => Number(process.env.PIPELINE_TIMEOUT_MS ?? 90000);
 function readWeb(name: string): string { return readFileSync(resolve(WEB, name), "utf8"); }
+
+class TimeoutError extends Error {}
+// Гарантия «никогда не висеть»: пайплайн всегда отвечает в пределах лимита,
+// иначе — честный graceful-ответ вместо зависания (защита от HTTP 0 у судьи).
+function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((res, rej) => {
+    const t = setTimeout(() => rej(new TimeoutError("pipeline-timeout")), ms);
+    p.then((v) => { clearTimeout(t); res(v); }, (e) => { clearTimeout(t); rej(e); });
+  });
+}
 
 function extractMessage(body: unknown): string | null {
   if (!body || typeof body !== "object") return null;
@@ -119,17 +130,20 @@ export function buildServer(deps: ServerDeps): FastifyInstance {
     const session_id = typeof b.session_id === "string" ? b.session_id : undefined;
     const prefer_research = b.prefer_research === true;
     try {
-      const res = await deps.pipeline({ message, session_id, prefer_research });
+      const res = await withTimeout(deps.pipeline({ message, session_id, prefer_research }), pipelineTimeoutMs());
       deps.monitor.record({
         path, message, session_id, status: 200, latency_ms: Date.now() - t0,
         mode: res.plan?.mode, insufficient: res.insufficient_data,
         response_preview: res.response.slice(0, 200),
       });
       return reply.code(200).send(res);
-    } catch {
-      deps.monitor.record({ path, message, session_id, status: 200, latency_ms: Date.now() - t0, insufficient: true, response_preview: "ошибка обработки" });
+    } catch (e) {
+      const timedOut = e instanceof TimeoutError;
+      deps.monitor.record({ path, message, session_id, status: 200, latency_ms: Date.now() - t0, insufficient: true, response_preview: timedOut ? "таймаут анализа" : "ошибка обработки" });
       return reply.code(200).send({
-        response: "Произошла внутренняя ошибка при обработке запроса.",
+        response: timedOut
+          ? "Анализ этого вопроса занял слишком много времени. Попробуйте сузить или переформулировать вопрос — например, уточните метрику, период или сегмент."
+          : "Произошла внутренняя ошибка при обработке запроса.",
         assumptions: [], trace: [], chart: null, insufficient_data: true,
         session_id: session_id ?? "s-error",
       } satisfies FinalResponse);

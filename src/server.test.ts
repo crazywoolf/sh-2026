@@ -33,6 +33,16 @@ test("POST /api/chat валидный → 200 + response", async () => {
   assert.equal(r.json().response, "ответ");
 });
 
+test("таймаут пайплайна → 200 + graceful insufficient (никогда не висит)", async () => {
+  process.env.PIPELINE_TIMEOUT_MS = "50";
+  const a = buildServer(deps({ pipeline: () => new Promise(() => {}) })); // зависает навсегда
+  const r = await a.inject({ method: "POST", url: "/api/chat", payload: { message: "медленный вопрос" } });
+  delete process.env.PIPELINE_TIMEOUT_MS;
+  assert.equal(r.statusCode, 200);
+  assert.equal(r.json().insufficient_data, true);
+  assert.match(r.json().response, /слишком много времени/);
+});
+
 test("монитор: запрос логируется и виден в /api/monitor/log", async () => {
   const d = deps();
   const a = buildServer(d);
