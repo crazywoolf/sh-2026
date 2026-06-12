@@ -145,3 +145,27 @@ textarea#input { flex: 1; border: none; outline: none; resize: none; font-family
 .section-lbl { font-size: 12px; color: var(--txt-3); margin: 14px 0 8px; }
 .toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); background: var(--txt); color: #fff; font-size: 13px; padding: 9px 16px; border-radius: 8px; z-index: 60; opacity: 0; transition: opacity .2s; }
 .toast.show { opacity: 1; }
+
+/* Высота с учётом мобильного браузера */
+@supports (height: 100dvh) { body { height: 100dvh; } }
+
+/* Мобильная адаптация */
+@media (max-width: 600px) {
+  header { padding: 9px 12px; gap: 8px; }
+  .logo .sub { display: none; }
+  .logo h1 { font-size: 15px; }
+  .hbtn { padding: 7px 10px; }
+  .hbtn-lbl { display: none; }            /* «Автоотчёты» — только иконка */
+  .thread-inner { padding: 16px 12px 6px; gap: 13px; }
+  .welcome { padding: 24px 8px 8px; }
+  .welcome h2 { font-size: 18px; }
+  .bubble-user { max-width: 88%; }
+  .bot { max-width: 100%; }
+  .answer { padding: 12px 13px; font-size: 14px; }
+  .suggest { gap: 7px; }
+  .chip { font-size: 12px; padding: 7px 11px; }
+  .meta { gap: 11px; }
+  .dock { padding: 6px 12px 12px; }
+  .composer { border-radius: 12px; }
+  .drawer { width: 100vw; max-width: 100vw; }
+}

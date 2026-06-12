@@ -28,6 +28,14 @@
     .insf { color:var(--danger); font-weight:600; }
     .mono { font-variant-numeric:tabular-nums; color:var(--mut); }
     .empty { color:var(--mut); padding:30px; text-align:center; }
+    @media (max-width: 620px) {
+      header { flex-wrap: wrap; gap: 8px; }
+      input[type=text] { min-width: 140px; flex: 1; }
+      td.prev, th:nth-child(6) { display: none; }
+      td:nth-child(4), th:nth-child(4) { display: none; }
+      td.msg { max-width: 200px; }
+      table { font-size: 12px; }
+    }
   </style>
 </head>
 <body>
