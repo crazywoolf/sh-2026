@@ -15,3 +15,5 @@ db/*.duckdb.wal
 node_modules/
 dist/
 .env
+logs/
+runtime-logs/
