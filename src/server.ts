@@ -6,6 +6,7 @@ import type { Inbox } from "./delivery.ts";
 import type { Report } from "./report.ts";
 import type { Preset } from "./presets.ts";
 import type { MonitorStore } from "./monitor/store.ts";
+import type { ScheduleStore } from "./schedules/store.ts";
 
 export type PipelineFn = (q: UserQuery) => Promise<FinalResponse>;
 export type ServerDeps = {
@@ -15,6 +16,8 @@ export type ServerDeps = {
   deliver: (r: Report) => Promise<void>;
   presets: Pick<Preset, "title" | "question">[];
   monitor: MonitorStore;
+  schedules: ScheduleStore;
+  reconcileSchedules: () => void;
 };
 
 const PATHS = ["/api/chat", "/api/v1/chat", "/chat", "/api/ask", "/api/query"];
@@ -64,6 +67,37 @@ export function buildServer(deps: ServerDeps): FastifyInstance {
   // Мониторинг запросов (открытая read-only страница)
   app.get("/monitor", serve("monitor.html", "text/html; charset=utf-8") as never);
   app.get("/api/monitor/log", async () => deps.monitor.list());
+
+  // Страница отправленных автоотчётов
+  app.get("/reports", serve("reports.html", "text/html; charset=utf-8") as never);
+
+  // Расписания автоотчётов (CRUD)
+  type R = { code: (n: number) => { send: (b: unknown) => unknown } };
+  app.get("/api/schedules", async () => deps.schedules.list());
+  app.post("/api/schedules", (async (req: { body: unknown }, reply: R) => {
+    const b = (req.body ?? {}) as Record<string, unknown>;
+    if (typeof b.name !== "string" || typeof b.cron !== "string") return reply.code(422).send({ error: "нужны name и cron" });
+    const s = deps.schedules.add({ name: b.name, cron: b.cron, enabled: b.enabled !== false });
+    deps.reconcileSchedules();
+    return reply.code(200).send(s);
+  }) as never);
+  app.patch("/api/schedules/:id", (async (req: { params: Record<string, string>; body: unknown }, reply: R) => {
+    const b = (req.body ?? {}) as Record<string, unknown>;
+    const patch: Record<string, unknown> = {};
+    if (typeof b.enabled === "boolean") patch.enabled = b.enabled;
+    if (typeof b.cron === "string") patch.cron = b.cron;
+    if (typeof b.name === "string") patch.name = b.name;
+    const s = deps.schedules.update(req.params.id, patch);
+    if (!s) return reply.code(404).send({ error: "расписание не найдено" });
+    deps.reconcileSchedules();
+    return reply.code(200).send(s);
+  }) as never);
+  app.delete("/api/schedules/:id", (async (req: { params: Record<string, string> }, reply: R) => {
+    const ok = deps.schedules.remove(req.params.id);
+    if (!ok) return reply.code(404).send({ error: "расписание не найдено" });
+    deps.reconcileSchedules();
+    return reply.code(200).send({ ok: true });
+  }) as never);
 
   const handler = async (req: { body: unknown; url?: string }, reply: { code: (n: number) => { send: (b: unknown) => unknown } }) => {
     const t0 = Date.now();

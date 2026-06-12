@@ -5,6 +5,7 @@ import type { FinalResponse } from "./contracts/types.ts";
 import { Inbox } from "./delivery.ts";
 import type { Report } from "./report.ts";
 import { MonitorStore } from "./monitor/store.ts";
+import { ScheduleStore } from "./schedules/store.ts";
 
 const ok: FinalResponse = {
   response: "ответ", assumptions: [], trace: [], chart: null,
@@ -19,6 +20,8 @@ function deps(over: Partial<ServerDeps> = {}): ServerDeps {
     deliver: async (r: Report) => { inbox.add(r); },
     presets: [{ title: "T", question: "q" }],
     monitor: new MonitorStore(),
+    schedules: new ScheduleStore({ seed: [{ id: "s1", name: "Дашборд", cron: "0 9 * * 1", enabled: true }] }),
+    reconcileSchedules: () => {},
     ...over,
   };
 }
@@ -40,6 +43,29 @@ test("монитор: запрос логируется и виден в /api/mo
   assert.equal(log[0].message, "сколько клиентов?");
   assert.equal(log[0].session_id, "tester1");
   assert.equal(log[0].status, 200);
+});
+
+test("расписания: GET список, POST создаёт + reconcile", async () => {
+  let reconciled = 0;
+  const d = deps({ reconcileSchedules: () => { reconciled++; } });
+  const a = buildServer(d);
+  const list0 = await a.inject({ method: "GET", url: "/api/schedules" });
+  assert.equal(list0.json().length, 1);
+  const created = await a.inject({ method: "POST", url: "/api/schedules", payload: { name: "Демо", cron: "*/5 * * * *" } });
+  assert.equal(created.statusCode, 200);
+  assert.equal(created.json().name, "Демо");
+  assert.equal(reconciled, 1);
+  assert.equal((await a.inject({ method: "GET", url: "/api/schedules" })).json().length, 2);
+});
+
+test("расписания: PATCH toggle, DELETE", async () => {
+  const d = deps();
+  const a = buildServer(d);
+  const p = await a.inject({ method: "PATCH", url: "/api/schedules/s1", payload: { enabled: false } });
+  assert.equal(p.json().enabled, false);
+  const del = await a.inject({ method: "DELETE", url: "/api/schedules/s1" });
+  assert.equal(del.statusCode, 200);
+  assert.equal((await a.inject({ method: "GET", url: "/api/schedules" })).json().length, 0);
 });
 
 test("монитор: 404-проба тоже логируется", async () => {
