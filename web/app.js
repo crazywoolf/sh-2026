@@ -35,6 +35,7 @@ const ICONS = {
   list: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
   copy: '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>',
   code: '<path d="m16 18 4-4-4-4M8 6l-4 4 4 4"/>',
+  trash: '<path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6M14 11v6"/>',
 };
 const svg = (n, sz = 14) => `<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">${ICONS[n] || ""}</svg>`;
 
@@ -191,6 +192,65 @@ document.getElementById("new-chat").onclick = () => {
   sessionId = "web-" + Math.random().toString(36).slice(2);
   location.reload();
 };
-document.getElementById("reports-btn").onclick = () => { /* Фаза 2: дровер автоотчётов */ };
 renderSuggestions();
 updateSend();
+
+// --- Дровер автоотчётов ---
+const DEMO_CRON = "*/5 * * * *";
+const overlay = document.getElementById("overlay");
+const drawer = document.getElementById("drawer");
+const toast = document.getElementById("toast");
+const CRON_HUMAN = { "*/5 * * * *": "каждые 5 минут", "0 * * * *": "каждый час", "0 9 * * *": "ежедневно 09:00", "0 9 * * 1": "по понедельникам 09:00" };
+const cronHuman = (c) => CRON_HUMAN[c] || c;
+const showToast = (t) => { toast.textContent = t; toast.classList.add("show"); setTimeout(() => toast.classList.remove("show"), 2600); };
+const api = (url, opts) => fetch(url, opts).then((r) => r.json().catch(() => ({})));
+
+function openDrawer() { overlay.classList.add("open"); drawer.classList.add("open"); loadSchedules(); }
+function closeDrawer() { overlay.classList.remove("open"); drawer.classList.remove("open"); }
+
+async function loadSchedules() {
+  let list = [];
+  try { list = await api("/api/schedules"); } catch { /* */ }
+  const demo = list.find((s) => s.cron === DEMO_CRON);
+  const ds = document.getElementById("demo-slot");
+  ds.innerHTML = "";
+  const drow = el("div", "sch demo");
+  drow.innerHTML = '<div style="flex:1"><div class="sch-name">⚡ Демо-режим</div><div class="sch-sub">автоотчёт каждые 5 минут — для показа на защите</div></div>';
+  const dtg = el("button", "toggle" + (demo && demo.enabled ? "" : " off"));
+  dtg.onclick = async () => {
+    if (demo) await api("/api/schedules/" + demo.id, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ enabled: !demo.enabled }) });
+    else await api("/api/schedules", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name: "Демо (каждые 5 мин)", cron: DEMO_CRON }) });
+    loadSchedules();
+  };
+  drow.appendChild(dtg); ds.appendChild(drow);
+
+  const cont = document.getElementById("sch-list"); cont.innerHTML = "";
+  const reg = list.filter((s) => s.cron !== DEMO_CRON);
+  if (!reg.length) cont.innerHTML = '<div class="sch-sub" style="padding:2px 2px 8px">Пока нет расписаний.</div>';
+  reg.forEach((s) => {
+    const row = el("div", "sch");
+    const last = s.lastRunAt ? " · последний: " + new Date(s.lastRunAt).toLocaleString("ru") : "";
+    row.innerHTML = '<div style="flex:1"><div class="sch-name">' + esc(s.name) + '</div><div class="sch-sub">' + cronHuman(s.cron) + last + "</div></div>";
+    const tg = el("button", "toggle" + (s.enabled ? "" : " off"));
+    tg.onclick = async () => { await api("/api/schedules/" + s.id, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ enabled: !s.enabled }) }); loadSchedules(); };
+    const del = el("button", "sch-del", svg("trash", 16));
+    del.onclick = async () => { await fetch("/api/schedules/" + s.id, { method: "DELETE" }); loadSchedules(); };
+    row.appendChild(tg); row.appendChild(del); cont.appendChild(row);
+  });
+}
+
+document.getElementById("reports-btn").onclick = openDrawer;
+document.getElementById("drawer-close").onclick = closeDrawer;
+overlay.onclick = closeDrawer;
+document.getElementById("sch-add").onclick = async () => {
+  const name = document.getElementById("sch-name").value.trim() || "Отчёт";
+  const cron = document.getElementById("sch-cron").value;
+  await api("/api/schedules", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name, cron }) });
+  document.getElementById("sch-name").value = "";
+  loadSchedules(); showToast("Расписание добавлено");
+};
+document.getElementById("collect-now").onclick = async () => {
+  showToast("Собираю отчёт…");
+  try { await fetch("/api/report", { method: "POST" }); showToast("Отчёт собран и отправлен"); }
+  catch { showToast("Ошибка сборки"); }
+};

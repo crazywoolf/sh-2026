@@ -49,6 +49,37 @@
     </div>
   </div>
 
+  <div class="overlay" id="overlay"></div>
+  <aside class="drawer" id="drawer" aria-label="Автоотчёты">
+    <div class="drawer-head">
+      <h2>Автоотчёты</h2>
+      <button class="x" id="drawer-close" aria-label="Закрыть">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="drawer-body">
+      <div id="demo-slot"></div>
+      <div class="section-lbl">Расписания</div>
+      <div id="sch-list"></div>
+      <div class="section-lbl">Новое расписание</div>
+      <div class="addrow">
+        <input id="sch-name" type="text" placeholder="Название" />
+        <select id="sch-cron">
+          <option value="0 9 * * 1">Пн 09:00</option>
+          <option value="0 9 * * *">Ежедневно 09:00</option>
+          <option value="0 * * * *">Каждый час</option>
+          <option value="*/5 * * * *">Каждые 5 минут</option>
+        </select>
+      </div>
+      <button class="fbtn" id="sch-add" style="margin-top:8px">＋ Добавить расписание</button>
+    </div>
+    <div class="drawer-foot">
+      <a class="fbtn" href="/reports">Открыть отправленные отчёты →</a>
+      <button class="fbtn primary" id="collect-now">Собрать и отправить сейчас</button>
+    </div>
+  </aside>
+  <div class="toast" id="toast"></div>
+
   <script src="/app.js"></script>
 </body>
 </html>

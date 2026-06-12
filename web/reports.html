@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Meridian — отправленные отчёты</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <style>
+    .rpage { max-width: 860px; margin: 0 auto; padding: 20px 16px; }
+    .rhead { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .rhead h1 { font-size: 18px; margin: 0; font-weight: 600; }
+    .ritem { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+    .rtop { display: flex; align-items: center; gap: 12px; padding: 13px 15px; cursor: pointer; }
+    .ric { width: 34px; height: 34px; border-radius: 8px; background: var(--brand-bg); color: var(--brand); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .rtitle { font-size: 14px; font-weight: 600; }
+    .rsub { font-size: 12px; color: var(--txt-2); }
+    .rbadge { font-size: 11px; padding: 2px 9px; border-radius: 20px; }
+    .rbadge.ok { background: #e1f5ee; color: #0f6e56; }
+    .rbadge.alert { background: var(--warn-bg); color: var(--danger); }
+    .rbody { padding: 0 15px 14px; border-top: 1px solid var(--line); }
+    .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+    .rcard { border: 1px solid var(--line); border-radius: 8px; padding: 12px; }
+    .rcard.alert { border-left: 3px solid var(--danger); }
+    .rcard h3 { font-size: 13px; margin: 0 0 6px; font-weight: 600; }
+    .rcard .resp { font-size: 12px; color: var(--txt-2); line-height: 1.5; }
+    .recs { margin-top: 12px; padding: 11px 13px; border-left: 3px solid var(--brand); background: var(--brand-bg); border-radius: 0 8px 8px 0; font-size: 13px; }
+    .empty { color: var(--txt-2); text-align: center; padding: 40px; }
+    @media (max-width: 640px) { .cards { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo"><div class="mark">M</div><div><h1 style="font-size:16px;margin:0">Meridian</h1><div class="sub">Отправленные автоотчёты</div></div></div>
+    <div class="spacer"></div>
+    <a class="hbtn" href="/">← В чат</a>
+  </header>
+  <div class="rpage">
+    <div id="list"><div class="empty">Загрузка…</div></div>
+  </div>
+  <script>
+    let seq = 0;
+    const esc = (s) => String(s ?? "").replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+    const fmt = (iso) => { try { return new Date(iso).toLocaleString("ru"); } catch { return iso; } };
+
+    function chartInto(parent, chart) {
+      if (!chart || !chart.data || !chart.data.length) return;
+      const cv = document.createElement("canvas"); cv.id = "rc" + seq++;
+      parent.appendChild(cv);
+      const x = chart.x, y = Array.isArray(chart.y) ? chart.y[0] : chart.y;
+      const type = ["line", "bar", "pie"].includes(chart.type) ? chart.type : "bar";
+      const pal = ["#5d56c4", "#1d9e75", "#e24b4a", "#ba7517", "#378add", "#7f77dd"];
+      new Chart(cv, {
+        type,
+        data: { labels: chart.data.map((r) => String(r[x])), datasets: [{ label: chart.title || y, data: chart.data.map((r) => Number(r[y])), backgroundColor: type === "pie" ? pal : "#5d56c4", borderColor: "#5d56c4", borderWidth: type === "line" ? 2 : 0 }] },
+        options: { plugins: { legend: { display: type === "pie" } }, scales: type === "pie" ? {} : { y: { beginAtZero: true } } },
+      });
+    }
+
+    function renderReport(rep) {
+      const alerts = rep.items.filter((i) => i.alert || i.insufficient_data).length;
+      const wrap = document.createElement("div"); wrap.className = "ritem";
+      const top = document.createElement("div"); top.className = "rtop";
+      top.innerHTML = `<div class="ric"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h2v4M14 11v6"/></svg></div>
+        <div style="flex:1"><div class="rtitle">Дашборд здоровья</div><div class="rsub">${fmt(rep.generatedAt)} · ${rep.items.length} метрик</div></div>
+        <span class="rbadge ${alerts ? "alert" : "ok"}">${alerts ? alerts + " тревог" : "норма"}</span>`;
+      const body = document.createElement("div"); body.className = "rbody"; body.style.display = "none";
+      const grid = document.createElement("div"); grid.className = "cards";
+      for (const it of rep.items) {
+        const c = document.createElement("div"); c.className = "rcard" + (it.alert || it.insufficient_data ? " alert" : "");
+        c.innerHTML = `<h3>${esc(it.title)}</h3><div class="resp">${esc((it.response || "").replace(/\*\*/g, "")).slice(0, 200)}</div>`;
+        chartInto(c, it.chart);
+        grid.appendChild(c);
+      }
+      body.appendChild(grid);
+      if (rep.recommendations && rep.recommendations.length) {
+        const r = document.createElement("div"); r.className = "recs";
+        r.innerHTML = "<b>💡 Рекомендации</b>" + rep.recommendations.map((x) => "<div>• " + esc(x) + "</div>").join("");
+        body.appendChild(r);
+      }
+      top.onclick = () => { body.style.display = body.style.display === "none" ? "block" : "none"; };
+      wrap.appendChild(top); wrap.appendChild(body);
+      return wrap;
+    }
+
+    async function load() {
+      const list = document.getElementById("list");
+      try {
+        const reps = await (await fetch("/api/reports")).json();
+        if (!reps.length) { list.innerHTML = '<div class="empty">Отчётов пока нет. Соберите первый из чата (кнопка «Автоотчёты» → «Собрать сейчас») или дождитесь расписания.</div>'; return; }
+        list.innerHTML = "";
+        reps.forEach((rep, i) => { const node = renderReport(rep); if (i === 0) node.querySelector(".rbody").style.display = "block"; list.appendChild(node); });
+      } catch { list.innerHTML = '<div class="empty">Не удалось загрузить отчёты.</div>'; }
+    }
+    load();
+    setInterval(load, 15000);
+  </script>
+</body>
+</html>
