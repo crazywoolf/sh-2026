@@ -1,115 +1,184 @@
-const sessionId = "web-" + Math.random().toString(36).slice(2);
+let sessionId = "web-" + Math.random().toString(36).slice(2);
 let chartSeq = 0;
+let busy = false;
 
-async function ask(message, preferResearch) {
-  const res = await fetch("/api/chat", {
-    method: "POST", headers: { "content-type": "application/json" },
-    body: JSON.stringify({ message, session_id: sessionId, prefer_research: !!preferResearch }),
-  });
-  return res.json();
+const AGENTS = [
+  { key: "planner", label: "Планировщик" },
+  { key: "extractor", label: "Извлечение" },
+  { key: "analyst", label: "Аналитик" },
+  { key: "critic", label: "Критик" },
+  { key: "visualizer", label: "Визуализация" },
+];
+const SUGGESTIONS = [
+  "Здоров ли бизнес в целом?",
+  "Почему выручка падает, а GMV растёт?",
+  "Каковы три главных риска?",
+  "LTV/CAC по сегментам — где привлечение убыточно?",
+  "Где у нас самый низкий NPS?",
+];
+const FOLLOWUPS = ["В динамике по годам", "Разбей по сегментам", "Сравни продуктовые линии", "Что с этим делать?"];
+
+const log = document.getElementById("log");
+const thread = document.getElementById("thread");
+const input = document.getElementById("input");
+
+const esc = (s) => String(s ?? "").replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
+const scroll = () => { thread.scrollTop = thread.scrollHeight; };
+
+// --- мини-markdown ---
+function md(text) {
+  let h = esc(text).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  const lines = h.split(/\n/);
+  const out = []; let list = null;
+  const close = () => { if (list) { out.push(list === "ul" ? "</ul>" : "</ol>"); list = null; } };
+  for (const ln of lines) {
+    const t = ln.trim();
+    const ul = t.match(/^[-•]\s+(.*)/), ol = t.match(/^\d+[.)]\s+(.*)/);
+    if (ul) { if (list !== "ul") { close(); out.push("<ul>"); list = "ul"; } out.push("<li>" + ul[1] + "</li>"); }
+    else if (ol) { if (list !== "ol") { close(); out.push("<ol>"); list = "ol"; } out.push("<li>" + ol[1] + "</li>"); }
+    else { close(); if (t) out.push("<p>" + t + "</p>"); }
+  }
+  close();
+  return out.join("");
 }
 
 function renderChart(parent, chart) {
   if (!chart || !chart.data || !chart.data.length) return;
+  const wrap = el("div", "chart-wrap");
   const canvas = document.createElement("canvas");
   canvas.id = "c" + chartSeq++;
-  parent.appendChild(canvas);
+  wrap.appendChild(canvas); parent.appendChild(wrap);
   const x = chart.x, y = Array.isArray(chart.y) ? chart.y[0] : chart.y;
   const labels = chart.data.map((r) => String(r[x]));
   const values = chart.data.map((r) => Number(r[y]));
   const type = ["line", "bar", "pie", "scatter"].includes(chart.type) ? chart.type : "bar";
+  const palette = ["#5d56c4", "#1d9e75", "#e24b4a", "#ba7517", "#378add", "#7f77dd", "#d4537e"];
   new Chart(canvas, {
-    type, data: { labels, datasets: [{ label: chart.title || y, data: values, backgroundColor: "#5d56c4" }] },
-    options: { plugins: { legend: { display: type === "pie" } }, responsive: true },
+    type,
+    data: { labels, datasets: [{ label: chart.title || y, data: values, backgroundColor: type === "pie" ? palette : "#5d56c4", borderColor: "#5d56c4", borderWidth: type === "line" ? 2 : 0, tension: .3 }] },
+    options: { plugins: { legend: { display: type === "pie" }, title: { display: !!chart.title, text: chart.title, color: "#6c6f76", font: { size: 12 } } }, scales: type === "pie" ? {} : { y: { beginAtZero: true } }, responsive: true, maintainAspectRatio: true },
   });
 }
 
-function escapeHtml(s) { return String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c])); }
-
-function botBubble(parent, r) {
-  const b = document.createElement("div");
-  b.className = "bubble bot" + (r.insufficient_data ? " insufficient" : "");
-  b.innerHTML = `<div>${escapeHtml(r.response).replace(/\n/g, "<br>")}</div>`;
-  renderChart(b, r.chart);
-  if (r.assumptions && r.assumptions.length) {
-    const d = document.createElement("details");
-    d.innerHTML = `<summary>Допущения (${r.assumptions.length})</summary>` +
-      r.assumptions.map((a) => `<div class="meta">• ${escapeHtml(a)}</div>`).join("");
-    b.appendChild(d);
-  }
-  if (r.trace && r.trace.length) {
-    const d = document.createElement("details");
-    d.innerHTML = `<summary>Трасса агентов</summary><div class="meta">` +
-      r.trace.map((t) => t.agent + (t.verdict ? "(" + t.verdict + ")" : "")).join(" → ") + `</div>`;
-    b.appendChild(d);
-  }
-  parent.appendChild(b);
+function userMsg(text) {
+  const m = el("div", "msg user");
+  m.appendChild(el("div", "bubble-user", esc(text)));
+  log.appendChild(m); scroll();
 }
 
-function userBubble(parent, text) {
-  const b = document.createElement("div"); b.className = "bubble user"; b.textContent = text; parent.appendChild(b);
+// «Думаю» с анимацией агентов; возвращает узел для замены
+function thinkingMsg() {
+  const m = el("div", "msg bot");
+  const agents = el("div", "agents");
+  AGENTS.forEach((a) => { const p = el("span", "apill", a.label); p.dataset.k = a.key; agents.appendChild(p); });
+  const loader = el("div", "loader", '<span class="dot"></span><span class="dot"></span><span class="dot"></span> думаю…');
+  m.appendChild(agents); m.appendChild(loader);
+  log.appendChild(m); scroll();
+  let i = 0;
+  const pills = [...agents.querySelectorAll(".apill")];
+  const timer = setInterval(() => { pills.forEach((p, idx) => p.classList.toggle("on", idx <= i % pills.length)); i++; }, 420);
+  m._timer = timer;
+  return m;
 }
-function loader(parent) {
-  const l = document.createElement("div"); l.className = "loader"; l.textContent = "Думаю…"; parent.appendChild(l); return l;
-}
 
-document.getElementById("chat-send").onclick = async () => {
-  const inp = document.getElementById("chat-input"); const log = document.getElementById("chat-log");
-  const q = inp.value.trim(); if (!q) return; inp.value = "";
-  userBubble(log, q); const l = loader(log);
-  try { const r = await ask(q, false); l.remove(); botBubble(log, r); }
-  catch { l.textContent = "Ошибка запроса"; }
-};
+function copy(text) { navigator.clipboard && navigator.clipboard.writeText(text); }
 
-document.getElementById("research-send").onclick = async () => {
-  const inp = document.getElementById("research-input"); const log = document.getElementById("research-log");
-  const q = inp.value.trim(); if (!q) return; inp.value = "";
-  userBubble(log, q); const l = loader(log);
-  try {
-    const r = await ask(q, true); l.remove();
-    if (r.plan && r.plan.sub_questions.length > 1) {
-      const d = document.createElement("div"); d.className = "bubble bot";
-      d.innerHTML = "<b>Декомпозиция исследования:</b>" +
-        r.plan.sub_questions.map((s, i) => `<div class="subq">${i + 1}. ${escapeHtml(s)}</div>`).join("");
-      log.appendChild(d);
-    }
-    botBubble(log, r);
-  } catch { l.textContent = "Ошибка запроса"; }
-};
+function botAnswer(node, r) {
+  clearInterval(node._timer);
+  node.innerHTML = "";
+  const isResearch = r.plan && r.plan.mode === "research";
+  const ran = [...new Set((r.trace || []).map((t) => t.agent))];
 
-document.getElementById("report-now").onclick = async () => {
-  const out = document.getElementById("reports-out"); out.innerHTML = '<div class="loader">Собираю дашборд здоровья…</div>';
-  try {
-    const res = await fetch("/api/report", { method: "POST" }); const rep = await res.json();
-    renderReport(out, rep);
-  } catch { out.innerHTML = "Ошибка сборки отчёта"; }
-};
+  // пилюли-агенты + режим
+  const agents = el("div", "agents");
+  const modePill = el("span", "apill mode", isResearch ? "🔬 Исследование" : "💬 BI");
+  agents.appendChild(modePill);
+  AGENTS.filter((a) => ran.includes(a.key)).forEach((a) => agents.appendChild(el("span", "apill on", a.label)));
+  node.appendChild(agents);
 
-function renderReport(out, rep) {
-  out.innerHTML = `<h3>Дашборд здоровья — ${new Date(rep.generatedAt).toLocaleString("ru")}</h3>`;
-  const grid = document.createElement("div"); grid.className = "cards";
-  for (const it of rep.items) {
-    const c = document.createElement("div"); c.className = "card" + (it.alert ? " alert" : "");
-    c.innerHTML = `<h3>${escapeHtml(it.title)}</h3><div class="val">${escapeHtml(it.response).slice(0, 220)}</div>`;
-    renderChart(c, it.chart);
-    grid.appendChild(c);
+  const ans = el("div", "answer" + (r.insufficient_data ? " insufficient" : ""));
+  if (r.insufficient_data) ans.appendChild(el("div", "ins-tag", "⚠ Данных недостаточно"));
+
+  // декомпозиция research
+  if (isResearch && r.plan.sub_questions && r.plan.sub_questions.length > 1) {
+    const box = el("div", "research", "<b>Мини-исследование</b> — система разложила вопрос на " + r.plan.sub_questions.length + " направлений:");
+    r.plan.sub_questions.forEach((s, i) => box.appendChild(el("div", "subq", (i + 1) + ". " + esc(s))));
+    ans.appendChild(box);
   }
-  out.appendChild(grid);
-  const recs = rep.recommendations || [];
-  if (recs.length) {
-    const box = document.createElement("div");
-    box.className = "bubble";
-    box.innerHTML = "<b>💡 Рекомендации</b>" +
-      recs.map((r) => `<div class="subq">${escapeHtml(r)}</div>`).join("");
-    out.appendChild(box);
+
+  ans.appendChild(el("div", null, md(r.response)));
+  renderChart(ans, r.chart);
+
+  // действия
+  const sql = (r.trace || []).find((t) => t.sql)?.sql;
+  const meta = el("div", "meta");
+  if (r.assumptions && r.assumptions.length) meta.appendChild(toggleBtn("💡 Допущения (" + r.assumptions.length + ")", r.assumptions.map((a) => '<div class="d-item">• ' + esc(a) + "</div>").join("")));
+  if (r.trace && r.trace.length) meta.appendChild(toggleBtn("🔎 Трасса агентов", '<div class="trace-line">' + r.trace.map((t) => t.agent + (t.verdict ? "(" + t.verdict + ")" : "")).join(" → ") + "</div>"));
+  const cp = el("button", null, "⧉ Копировать"); cp.onclick = () => copy(r.response); meta.appendChild(cp);
+  if (sql) { const sb = el("button", null, "{} SQL"); sb.onclick = () => copy(sql); meta.appendChild(sb); }
+  ans.appendChild(meta);
+  node.appendChild(ans);
+
+  // follow-up чипы
+  if (!r.insufficient_data) {
+    const fu = el("div", "followups");
+    FOLLOWUPS.forEach((f) => { const c = el("button", "fchip", f); c.onclick = () => sendText(f); fu.appendChild(c); });
+    node.appendChild(fu);
   }
+  scroll();
 }
 
-document.querySelectorAll(".tab").forEach((t) => {
-  t.onclick = () => {
-    document.querySelectorAll(".tab").forEach((x) => x.classList.remove("active"));
-    document.querySelectorAll(".pane").forEach((p) => p.classList.add("hidden"));
-    t.classList.add("active");
-    document.getElementById(t.dataset.tab).classList.remove("hidden");
+function toggleBtn(label, html) {
+  const b = el("button", null, label);
+  let open = false, box = null;
+  b.onclick = () => {
+    open = !open;
+    if (open) { box = el("div", "disclosure", html); b.after(box); }
+    else if (box) { box.remove(); box = null; }
   };
+  return b;
+}
+
+async function sendText(text) {
+  const q = (text ?? "").trim();
+  if (!q || busy) return;
+  busy = true; updateSend();
+  const w = document.getElementById("welcome"); if (w) w.remove();
+  userMsg(q);
+  input.value = ""; autogrow();
+  const node = thinkingMsg();
+  try {
+    const res = await fetch("/api/chat", {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ message: q, session_id: sessionId }),
+    });
+    const r = await res.json();
+    botAnswer(node, r);
+  } catch {
+    clearInterval(node._timer);
+    node.innerHTML = '<div class="answer insufficient">Не удалось получить ответ. Попробуйте ещё раз.</div>';
+  } finally { busy = false; updateSend(); }
+}
+
+function updateSend() { document.getElementById("send").disabled = busy || !input.value.trim(); }
+function autogrow() { input.style.height = "auto"; input.style.height = Math.min(input.scrollHeight, 180) + "px"; }
+
+// --- инициализация ---
+function renderSuggestions() {
+  const s = document.getElementById("suggest");
+  if (!s) return;
+  SUGGESTIONS.forEach((q) => { const c = el("button", "chip", q); c.onclick = () => sendText(q); s.appendChild(c); });
+}
+document.getElementById("send").onclick = () => sendText(input.value);
+input.addEventListener("input", () => { autogrow(); updateSend(); });
+input.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendText(input.value); }
 });
+document.getElementById("new-chat").onclick = () => {
+  sessionId = "web-" + Math.random().toString(36).slice(2);
+  location.reload();
+};
+document.getElementById("reports-btn").onclick = () => { /* Фаза 2: дровер автоотчётов */ };
+renderSuggestions();
+updateSend();

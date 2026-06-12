@@ -9,37 +9,39 @@
 </head>
 <body>
   <header>
-    <h1>Meridian</h1>
-    <span class="sub">AI-аналитик для совета директоров</span>
+    <div class="logo">
+      <div class="mark">M</div>
+      <div>
+        <h1>Meridian</h1>
+        <div class="sub">AI-аналитик для совета директоров</div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <button class="hbtn" id="reports-btn" title="Скоро">📊 Автоотчёты</button>
+    <button class="hbtn icon" id="new-chat" title="Новый чат" aria-label="Новый чат">✚</button>
   </header>
-  <nav class="tabs">
-    <button class="tab active" data-tab="chat">Диалоговый BI</button>
-    <button class="tab" data-tab="research">Ad-hoc исследование</button>
-    <button class="tab" data-tab="reports">Отчёты по расписанию</button>
-  </nav>
-  <main>
-    <section id="chat" class="pane">
-      <div id="chat-log"></div>
-      <div class="row">
-        <input id="chat-input" type="text" placeholder="Спросите про выручку, отток, юнит-экономику…" />
-        <button class="primary" id="chat-send">Спросить</button>
+
+  <div class="thread" id="thread">
+    <div class="thread-inner" id="log">
+      <div class="welcome" id="welcome">
+        <div class="mark">M</div>
+        <h2>Спросите про бизнес Meridian</h2>
+        <p>Задайте вопрос на естественном языке — система сама решит, ответить кратко или провести мини-исследование. Вот с чего можно начать:</p>
+        <div class="suggest" id="suggest"></div>
       </div>
-    </section>
-    <section id="research" class="pane hidden">
-      <div id="research-log"></div>
-      <div class="row">
-        <input id="research-input" type="text" placeholder="Сложный вопрос с гипотезой — система проведёт мини-исследование…" />
-        <button class="primary" id="research-send">Исследовать</button>
+    </div>
+  </div>
+
+  <div class="dock">
+    <div class="dock-inner">
+      <div class="composer">
+        <textarea id="input" rows="1" placeholder="Спросите про выручку, отток, юнит-экономику…"></textarea>
+        <button class="send" id="send" aria-label="Отправить">↑</button>
       </div>
-    </section>
-    <section id="reports" class="pane hidden">
-      <div class="row">
-        <button class="primary" id="report-now">Собрать отчёт сейчас</button>
-        <span class="sub" style="align-self:center">Расписание: каждый пн 9:00 — авто-сборка и отправка</span>
-      </div>
-      <div id="reports-out"></div>
-    </section>
-  </main>
+      <div class="hint">Enter — отправить · Shift+Enter — перенос строки</div>
+    </div>
+  </div>
+
   <script src="/app.js"></script>
 </body>
 </html>
