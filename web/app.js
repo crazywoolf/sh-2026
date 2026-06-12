@@ -56,6 +56,23 @@ function md(text) {
   return out.join("");
 }
 
+const RU_MON = ["янв", "фев", "мар", "апр", "май", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"];
+// Подписи-даты в человеческий вид: 2023-01-01 → «янв 23», 2024-07 → «июл 24».
+function fmtLabel(s) {
+  const m = /^(\d{4})-(\d{2})(?:-\d{2})?$/.exec(s);
+  if (m) return RU_MON[+m[2] - 1] + " " + m[1].slice(2);
+  return s;
+}
+// Числа на осях/в подсказках для C-level: млрд/млн/тыс, проценты, запятая-десятичная.
+function fmtNum(v, pct) {
+  if (v == null || isNaN(v)) return "";
+  if (pct) return String(Math.round(v * 100) / 100).replace(".", ",") + "%";
+  const a = Math.abs(v);
+  if (a >= 1e9) return (v / 1e9).toFixed(1).replace(".", ",") + " млрд";
+  if (a >= 1e6) return Math.round(v / 1e6).toString() + " млн";
+  if (a >= 1e3) return Math.round(v / 1e3).toString() + " тыс";
+  return String(Math.round(v * 100) / 100).replace(".", ",");
+}
 function renderChart(parent, chart) {
   if (!chart || !chart.data || !chart.data.length) return;
   const wrap = el("div", "chart-wrap");
@@ -63,14 +80,24 @@ function renderChart(parent, chart) {
   canvas.id = "c" + chartSeq++;
   wrap.appendChild(canvas); parent.appendChild(wrap);
   const x = chart.x, y = Array.isArray(chart.y) ? chart.y[0] : chart.y;
-  const labels = chart.data.map((r) => String(r[x]));
+  const labels = chart.data.map((r) => fmtLabel(String(r[x])));
   const values = chart.data.map((r) => Number(r[y]));
   const type = ["line", "bar", "pie", "scatter"].includes(chart.type) ? chart.type : "bar";
+  const isPct = /pct|rate|margin|доля|процент/i.test(String(y));
   const palette = ["#5d56c4", "#1d9e75", "#e24b4a", "#ba7517", "#378add", "#7f77dd", "#d4537e"];
+  const fmt = (v) => fmtNum(v, isPct);
   new Chart(canvas, {
     type,
     data: { labels, datasets: [{ label: chart.title || y, data: values, backgroundColor: type === "pie" ? palette : "#5d56c4", borderColor: "#5d56c4", borderWidth: type === "line" ? 2 : 0, tension: .3 }] },
-    options: { plugins: { legend: { display: type === "pie" }, title: { display: !!chart.title, text: chart.title, color: "#6c6f76", font: { size: 12 } } }, scales: type === "pie" ? {} : { y: { beginAtZero: true } }, responsive: true, maintainAspectRatio: true },
+    options: {
+      plugins: {
+        legend: { display: type === "pie" },
+        title: { display: !!chart.title, text: chart.title, color: "#6c6f76", font: { size: 12 } },
+        tooltip: { callbacks: { label: (c) => (type === "pie" ? c.label + ": " : "") + fmt(type === "pie" ? c.parsed : c.parsed.y) } },
+      },
+      scales: type === "pie" ? {} : { y: { beginAtZero: true, ticks: { callback: (v) => fmt(v) } } },
+      responsive: true, maintainAspectRatio: true,
+    },
   });
 }
 
