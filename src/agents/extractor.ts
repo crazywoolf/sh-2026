@@ -6,10 +6,10 @@ import { runSelect } from "../db/duck.ts";
 import { METRICS, findMetric } from "../metrics/library.ts";
 
 const PlanSchema = z.object({
-  approach: z.enum(["metric_template", "free_sql"]),
+  approach: z.enum(["metric_template", "free_sql"]).catch("free_sql"),
   metric_id: z.string().nullish(),
   sql: z.string().nullish(),
-  reason: z.string(),
+  reason: z.string().nullish().transform((v) => v ?? ""),
 });
 
 const SYSTEM = `Ты — Extractor системы Meridian. Задача — ПОЛУЧИТЬ данные из DuckDB под вопрос.
@@ -30,6 +30,7 @@ ${METRICS.map((m) => `- ${m.id}: ${m.question_ru}`).join("\n")}
 1. По умолчанию ВСЕГДА пытайся сформировать SELECT. "insufficient" — НЕ твоя работа; если данные есть хоть частично, верни их.
 2. Не смешивай orders и financials в ОДНОМ запросе (это разные слои). Но расхождение GMV/выручки берётся из financials_monthly (там есть оба поля) — это считаемо.
 3. NPS = % promoter − % detractor (а не среднее score). Выручку по заказам — фильтр status='completed'.
+   Доли СТАТУСОВ заказов (отменённые/возвращённые/спорные) считай от ВСЕХ заказов (база = все статусы, включая completed), используй метрику order_status_dist.
 4. Если вопрос неоднозначен (напр. «лучший месяц») — выбери разумную метрику (по выручке) и опиши выбор в reason; данные всё равно верни.
 5. Только SELECT/WITH, без точки с запятой и служебных объектов (_*).
 
