@@ -4,11 +4,11 @@ export const METRICS: Metric[] = [
   // --- P&L / монетизация (financials_monthly: gmv, revenue_net/gross, take_rate, ebitda) ---
   {
     id: "monetization_by_year",
-    question_ru: "Монетизация: GMV, чистая выручка и take rate по годам (почему выручка падает при росте GMV)",
+    question_ru: "Монетизация / КОМИССИЯ платформы по годам: GMV, чистая выручка и take rate (в %) — почему выручка падает при росте GMV",
     sql: `SELECT year(month) AS year,
                  round(sum(gmv)) AS gmv,
                  round(sum(revenue_net)) AS revenue_net,
-                 round(avg(take_rate), 4) AS avg_take_rate
+                 round(100.0*avg(take_rate), 2) AS take_rate_pct
           FROM financials_monthly GROUP BY 1 ORDER BY 1`,
   },
   {
@@ -31,8 +31,8 @@ export const METRICS: Metric[] = [
   },
   {
     id: "take_rate_dynamics",
-    question_ru: "Динамика take rate (доли платформы) по месяцам",
-    sql: `SELECT month, round(take_rate, 4) AS take_rate FROM financials_monthly ORDER BY month`,
+    question_ru: "Динамика take rate (доли платформы) ПО МЕСЯЦАМ (в %)",
+    sql: `SELECT month, round(100.0*take_rate, 2) AS take_rate_pct FROM financials_monthly ORDER BY month`,
   },
   {
     id: "best_month_by_revenue",
