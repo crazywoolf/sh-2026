@@ -9,8 +9,8 @@ import { visualize } from "./agents/visualizer.ts";
 export function buildAgents(llm: LLMClient): Agents {
   return {
     plan: (q, opts) => plan(llm, q, opts),
-    extract: (q) => extract(llm, q),
-    analyze: (q, ext) => analyze(llm, q, ext),
+    extract: (q, guidance) => extract(llm, q, guidance),
+    analyze: (q, ext, guidance) => analyze(llm, q, ext, guidance),
     critique: (q, ext, ana) => critique(llm, q, ext, ana),
     visualize: (ana, ext) => visualize(llm, ana, ext),
   };

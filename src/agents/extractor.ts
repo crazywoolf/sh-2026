@@ -61,7 +61,7 @@ export function isAmbiguousBestPeriod(q: string): boolean {
   return superlative && period && !metric;
 }
 
-export async function extract(llm: LLMClient, question: string): Promise<ExtractorOutput> {
+export async function extract(llm: LLMClient, question: string, guidance?: string): Promise<ExtractorOutput> {
   if (isAmbiguousBestPeriod(question)) {
     const m = findMetric("best_month_ambiguous");
     if (m) {
@@ -76,7 +76,10 @@ export async function extract(llm: LLMClient, question: string): Promise<Extract
       } catch { /* падение — уходим в обычный путь ниже */ }
     }
   }
-  const p = await callJSON(llm, SYSTEM, `Вопрос: ${question}`, PlanSchema);
+  const user = guidance
+    ? `Вопрос: ${question}\n\n🔁 ЗАМЕЧАНИЕ РЕВИЗОРА (Critic вернул на доработку — учти при выборе метрики/SQL): ${guidance}`
+    : `Вопрос: ${question}`;
+  const p = await callJSON(llm, SYSTEM, user, PlanSchema);
   let sql = "";
   let metric_id: string | undefined;
   if (p.approach === "metric_template" && p.metric_id) {

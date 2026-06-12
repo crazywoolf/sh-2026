@@ -47,12 +47,12 @@ const SYSTEM = `Ты — Analyst системы Meridian с инженерной
 Верни JSON {answer, key_findings[], method, assumptions[], caveats[], confidence: high|medium|low}.`;
 
 export async function analyze(
-  llm: LLMClient, question: string, ext: ExtractorOutput,
+  llm: LLMClient, question: string, ext: ExtractorOutput, guidance?: string,
 ): Promise<AnalystOutput> {
   const user = `Вопрос: ${question}
 data_sufficient: ${ext.data_sufficient}
 Колонки: ${JSON.stringify(ext.columns)}
 Строки (до 50): ${JSON.stringify(ext.rows.slice(0, 50))}
-Заметки Extractor: ${ext.notes}`;
+Заметки Extractor: ${ext.notes}${guidance ? `\n🔁 ЗАМЕЧАНИЕ РЕВИЗОРА (Critic вернул на доработку — учти и исправь): ${guidance}` : ""}`;
   return callJSON(llm, SYSTEM, user, AnalystOutputSchema);
 }

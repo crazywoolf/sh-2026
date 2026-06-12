@@ -21,12 +21,16 @@ async function answerOne(a: Agents, q: string, trace: TraceEntry[]) {
   let ana = await a.analyze(q, ext);
   trace.push({ agent: "analyst", note: ana.method });
 
+  // keep-best: лучший непадший вариант, чтобы кривая ревизия Critic-а не ухудшила ответ.
+  let best = { ext, ana };
+
   for (let i = 0; i < MAX_REVISIONS; i++) {
     const crit = await a.critique(q, ext, ana);
     trace.push({ agent: "critic", verdict: crit.verdict });
     if (crit.verdict === "approved" || crit.verdict === "reject") {
       return { ext, ana, rejected: crit.verdict === "reject" };
     }
+    // verdict === "revise": применяем guidance и пересобираем ответ
     const guidance = crit.guidance ?? undefined;
     if (crit.target === "extractor") {
       ext = await a.extract(q, guidance);
@@ -34,8 +38,12 @@ async function answerOne(a: Agents, q: string, trace: TraceEntry[]) {
     }
     ana = await a.analyze(q, ext, guidance);
     trace.push({ agent: "analyst", note: ana.method });
+    // Принимаем ревизию как «лучшую» ТОЛЬКО если она не потеряла данные
+    // (защита от уверенно-неправильного Critic-а, который мог бы деградировать верный ответ).
+    if (ext.data_sufficient || !best.ext.data_sufficient) best = { ext, ana };
   }
-  return { ext, ana, rejected: false };
+  // Ревизии исчерпаны без approve → отдаём лучший непадший вариант, а не последний.
+  return { ...best, rejected: false };
 }
 
 export async function runPipeline(
