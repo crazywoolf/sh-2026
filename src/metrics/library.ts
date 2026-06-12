@@ -75,6 +75,14 @@ export const METRICS: Metric[] = [
           WHERE o.status='completed' GROUP BY 1 ORDER BY 2 DESC`,
   },
   {
+    id: "order_value_vs_revenue",
+    question_ru: "Средний чек (GMV на заказ) vs доход платформы с заказа (revenue на заказ) по годам — чек стабилен, но выручка с заказа падает",
+    sql: `SELECT year(order_date) AS year,
+                 round(avg(gmv)) AS avg_gmv_per_order,
+                 round(avg(revenue)) AS avg_revenue_per_order
+          FROM orders WHERE status='completed' GROUP BY 1 ORDER BY 1`,
+  },
+  {
     id: "order_status_dist",
     question_ru: "Доли статусов заказов (completed/cancelled/refunded/disputed)",
     sql: `SELECT status, count(*) AS n, round(100.0*count(*)/sum(count(*)) OVER(),1) AS pct
@@ -218,6 +226,16 @@ export const METRICS: Metric[] = [
                   INTERSECT SELECT customer_id FROM nps_responses WHERE year(response_date)=2025) p USING(customer_id)
             WHERE year(n.response_date) IN (2023,2025) GROUP BY 1) c USING(year)
           ORDER BY a.year`,
+  },
+
+  {
+    id: "engagement_vanity_vs_real",
+    question_ru: "Вовлечённость: входы в систему РАСТУТ, но число заказов на клиента ПАДАЕТ (vanity-активность ≠ экономическая активность) — по годам",
+    sql: `SELECT year(month) AS year,
+                 round(avg(login_count),2) AS avg_logins,
+                 round(avg(orders_count),2) AS avg_orders,
+                 round(100.0*count(*) FILTER(WHERE login_count>0 AND orders_count=0)/count(*),1) AS logged_not_ordered_pct
+          FROM customer_activity_monthly GROUP BY 1 ORDER BY 1`,
   },
 
   // --- Вовлечённость, клиенты ---
