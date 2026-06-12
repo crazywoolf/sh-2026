@@ -78,6 +78,11 @@
     .dec{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:var(--shadow)}
     .dec b{display:block;font-size:13.5px;margin-bottom:3px;color:var(--ink)}
     .dec span{font-size:12.5px;color:var(--mut);line-height:1.45}
+    .princ-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+    .princ{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow);border-top:3px solid var(--brand);display:flex;flex-direction:column}
+    .princ b{display:block;font-size:15px;margin-bottom:6px;color:var(--ink)}
+    .princ p{margin:0;font-size:13px;color:var(--mut);line-height:1.5}
+    .princ .crit{align-self:flex-start;margin-top:12px;font-size:10.5px;font-weight:700;color:var(--brand);background:#ece9fb;border-radius:6px;padding:3px 9px;text-transform:uppercase;letter-spacing:.03em}
     .chips{display:flex;flex-wrap:wrap;gap:9px;margin-top:14px}
     .chip{font-size:12.5px;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:999px;padding:7px 13px;
       display:inline-flex;align-items:center;gap:7px}
@@ -230,6 +235,7 @@
     <a href="#problem"><span>Проблема совета</span></a>
     <a href="#cases"><span>4 гипотезы</span></a>
     <a href="#synth"><span>Карта компромиссов</span></a>
+    <a href="#trust"><span>6 принципов</span></a>
     <a href="#arch"><span>Архитектура</span></a>
     <a href="#trace"><span>Транскрипт</span></a>
     <a href="#modes"><span>Три режима</span></a>
@@ -248,7 +254,7 @@
     </div>
     <div class="stats">
       <div class="stat"><b>5</b><span>агентов в конвейере</span></div>
-      <div class="stat"><b>24</b><span>метрики в библиотеке</span></div>
+      <div class="stat"><b>36</b><span>метрик в библиотеке</span></div>
       <div class="stat"><b>0</b><span>ответов 500 · 0/13 stress</span></div>
       <div class="stat"><b>3</b><span>режима: чат · ресёрч · отчёты</span></div>
     </div>
@@ -358,6 +364,45 @@
       <div class="ba accent">
         <div class="t">Дисциплина границ</div>
         <p style="margin:0;font-size:14px;line-height:1.55;color:#33363c">Где данных не хватает или они косвенные — система <b>не выдумывает</b>, а помечает <code>insufficient_data</code> и отделяет заявленное от доказанного. Честность важнее красивого ответа.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRUST — 6 принципов -->
+  <section class="slide" id="trust">
+    <div class="eyebrow">Почему результату можно доверять</div>
+    <h2 class="title">Шесть принципов</h2>
+    <p class="lead">Каждый принцип отвечает на конкретный критерий оценки — это то, что отличает аналитика от «генератора текста».</p>
+    <div class="princ-grid">
+      <div class="princ">
+        <b>Честность о данных</b>
+        <p>Система говорит «здесь данных не хватает» — и это <b>правильный ответ</b>, а не провал.</p>
+        <span class="crit">дисциплина границ</span>
+      </div>
+      <div class="princ">
+        <b>Критик ловит ошибки</b>
+        <p>Подмену цифр, пропущенный фильтр, галлюцинацию. На закрытых вопросах это решает доверие.</p>
+        <span class="crit">архитектура · точность</span>
+      </div>
+      <div class="princ">
+        <b>Срез под вопрос</b>
+        <p>Не средние по больнице. Тот самый сегмент, тот самый квартал, тот самый фильтр.</p>
+        <span class="crit">точность</span>
+      </div>
+      <div class="princ">
+        <b>Различимые роли</b>
+        <p>Четыре агента видно в архитектуре и в транскрипте — кто что сделал и почему.</p>
+        <span class="crit">архитектура агентов</span>
+      </div>
+      <div class="princ">
+        <b>Выводы, а не пересказ</b>
+        <p>«Доля сегмента упала ниже порога, где юнит-экономика не сходится» — не «X равен 47%».</p>
+        <span class="crit">бизнес-интерпретация</span>
+      </div>
+      <div class="princ">
+        <b>Уместная визуализация</b>
+        <p>График там, где он добавляет смысл. Числовой одномерный ответ — без графика.</p>
+        <span class="crit">визуализация и UX</span>
       </div>
     </div>
   </section>
@@ -558,7 +603,7 @@
       <div class="srow"><span class="k">LLM</span><span class="v">YandexGPT 5.1 (OpenAI-совместимый API, Yandex Cloud)</span></div>
       <div class="srow"><span class="k">Бэкенд</span><span class="v">Node 22 · TypeScript · Fastify · zod (контракт судьи)</span></div>
       <div class="srow"><span class="k">Данные</span><span class="v">DuckDB read-only + guard-rails (только SELECT, белый список таблиц)</span></div>
-      <div class="srow"><span class="k">Агенты</span><span class="v">5 агентов + оркестратор, библиотека из 28 проверенных метрик</span></div>
+      <div class="srow"><span class="k">Агенты</span><span class="v">5 агентов + оркестратор, библиотека из ~36 проверенных метрик</span></div>
       <div class="srow"><span class="k">Инфра</span><span class="v">Docker на ВМ, --restart unless-stopped, том для логов/расписаний</span></div>
       <div class="srow"><span class="k">Доступ</span><span class="v">публичный URL судьи · /health · /docs · /monitor</span></div>
     </div>
@@ -582,7 +627,7 @@
   <script>
     // активная точка навигации
     const dots=[...document.querySelectorAll('.dots a')];
-    const secs=['hero','problem','cases','synth','arch','trace','modes','robust','deploy'].map(id=>document.getElementById(id));
+    const secs=['hero','problem','cases','synth','trust','arch','trace','modes','robust','deploy'].map(id=>document.getElementById(id));
     // кликабельные колонки-гипотезы → чат с этим вопросом
     document.querySelectorAll('.case[data-q]').forEach(a=>{a.href='/?q='+encodeURIComponent(a.dataset.q);});
     const io=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){
