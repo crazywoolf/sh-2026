@@ -6,11 +6,13 @@ import type { LLMClient } from "./llm/client.ts";
 
 function scriptedLLM(): LLMClient {
   const byMarker = (sys: string): string => {
-    if (sys.includes("планировщик")) return '{"mode":"bi","reasoning":"простой","sub_questions":["выручка по продуктовым линиям"]}';
-    if (sys.includes("Extractor")) return '{"approach":"metric_template","metric_id":"revenue_by_product_line","reason":"подходит"}';
-    if (sys.includes("Analyst")) return '{"answer":"Лидер по выручке — Разработка и IT","key_findings":["IT лидирует"],"method":"sum(revenue) по completed","assumptions":[],"caveats":[],"confidence":"high"}';
-    if (sys.includes("Critic")) return '{"verdict":"approved","checks":[{"name":"status filter","passed":true,"comment":"ok"}],"issues":[]}';
-    if (sys.includes("Visualization")) return '{"chart":{"type":"bar","title":"Выручка по линиям","x":"product_line","y":"revenue","data":[]},"rationale":"сравнение категорий"}';
+    // Уникальные маркеры «Ты — <роль>» (встречаются только в собственном промпте агента,
+    // в отличие от перекрёстных упоминаний ролей внутри других промптов).
+    if (sys.includes("Ты — планировщик")) return '{"mode":"bi","reasoning":"простой","sub_questions":["выручка по продуктовым линиям"]}';
+    if (sys.includes("Ты — Extractor")) return '{"approach":"metric_template","metric_id":"revenue_by_product_line","reason":"подходит"}';
+    if (sys.includes("Ты — Analyst")) return '{"answer":"Лидер по выручке — Разработка и IT","key_findings":["IT лидирует"],"method":"sum(revenue) по completed","assumptions":[],"caveats":[],"confidence":"high"}';
+    if (sys.includes("Ты — Critic")) return '{"verdict":"approved","checks":[{"name":"status filter","passed":true,"comment":"ok"}],"issues":[]}';
+    if (sys.includes("Ты — Visualization")) return '{"chart":{"type":"bar","title":"Выручка по линиям","x":"product_line","y":"revenue","data":[]},"rationale":"сравнение категорий"}';
     return "{}";
   };
   return { complete: async (system) => byMarker(system) };

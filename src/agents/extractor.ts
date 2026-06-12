@@ -12,12 +12,28 @@ const PlanSchema = z.object({
   reason: z.string(),
 });
 
-const SYSTEM = `Ты — Extractor системы Meridian. По вопросу выбери способ получить данные из DuckDB.
-Доступные метрики (используй approach="metric_template" и metric_id, если подходит):
+const SYSTEM = `Ты — Extractor системы Meridian. Задача — ПОЛУЧИТЬ данные из DuckDB под вопрос.
+Доступные метрики (approach="metric_template" + metric_id, если подходящая есть):
 ${METRICS.map((m) => `- ${m.id}: ${m.question_ru}`).join("\n")}
-Если ни одна не подходит — approach="free_sql" и напиши ОДИН SELECT-запрос (только чтение, таблицы:
-customers, orders, product_lines, nps_responses, customer_activity_monthly, churn_reasons,
-financials_monthly, unit_economics_monthly). НЕ смешивай orders и financials. Верни JSON {approach, metric_id?, sql?, reason}.`;
+
+Если готовой метрики нет — approach="free_sql" и напиши ОДИН SELECT (только чтение). Схема таблиц:
+- financials_monthly(month, gmv, revenue_gross, revenue_net, take_rate, cogs, opex_marketing, opex_rnd, opex_admin, ebitda, capex, headcount) — P&L платформы помесячно. ЗДЕСЬ есть и GMV, и выручка, и take_rate → вопросы про их расхождение/динамику считаются ОТСЮДА.
+- orders(order_id, customer_id, product_line_id, order_date, gmv, revenue, status, provider_type) — транзакции.
+- customers(customer_id, segment, industry, city, employee_count_band, signup_date, churn_date, contract_type, acquisition_channel).
+- product_lines(product_line_id, name, category, launch_date, status).
+- nps_responses(response_id, customer_id, product_line_id, response_date, score, category[promoter/passive/detractor], comment_tag).
+- customer_activity_monthly(customer_id, month, orders_count, gmv_total, days_active, login_count, status[active/churning/dormant/churned]).
+- churn_reasons(customer_id, churn_date, primary_reason[price/no_need/quality/consolidation/ai_alternative/other], competitor_named, interview_completed, nps_at_churn).
+- unit_economics_monthly(month, segment[SMB/Mid/Large], product_line_id, cac, ltv_12m, payback_months, gross_margin_pct, take_rate_effective, new_customers).
+
+ПРАВИЛА:
+1. По умолчанию ВСЕГДА пытайся сформировать SELECT. "insufficient" — НЕ твоя работа; если данные есть хоть частично, верни их.
+2. Не смешивай orders и financials в ОДНОМ запросе (это разные слои). Но расхождение GMV/выручки берётся из financials_monthly (там есть оба поля) — это считаемо.
+3. NPS = % promoter − % detractor (а не среднее score). Выручку по заказам — фильтр status='completed'.
+4. Если вопрос неоднозначен (напр. «лучший месяц») — выбери разумную метрику (по выручке) и опиши выбор в reason; данные всё равно верни.
+5. Только SELECT/WITH, без точки с запятой и служебных объектов (_*).
+
+Верни JSON {approach, metric_id?, sql?, reason}.`;
 
 export async function extract(llm: LLMClient, question: string): Promise<ExtractorOutput> {
   const p = await callJSON(llm, SYSTEM, `Вопрос: ${question}`, PlanSchema);
