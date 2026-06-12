@@ -31,15 +31,42 @@ ${METRICS.map((m) => `- ${m.id}: ${m.question_ru}`).join("\n")}
 2. Не смешивай orders и financials в ОДНОМ запросе (это разные слои). Но расхождение GMV/выручки берётся из financials_monthly (там есть оба поля) — это считаемо.
 3. NPS = % promoter − % detractor (а не среднее score). Выручку по заказам — фильтр status='completed'.
    Доли СТАТУСОВ заказов (отменённые/возвращённые/спорные) считай от ВСЕХ заказов (база = все статусы, включая completed), используй метрику order_status_dist.
-4. Если вопрос неоднозначен (напр. «лучший месяц») — выбери разумную метрику (по выручке) и опиши выбор в reason; данные всё равно верни.
+4. Превосходная степень БЕЗ метрики («лучший/худший/топ месяц/период», «когда было лучше всего») → метрика best_month_ambiguous (вернёт лучший месяц по РАЗНЫМ критериям — выручка/GMV/EBITDA, они дают РАЗНЫЕ месяцы). В reason пометь «критерий не задан — показываем по нескольким метрикам, нужно уточнение». Если метрика прямо названа («месяц с макс. выручкой») — обычный SELECT по ней.
    Вопрос про маржу «high/mid/low» или «по категориям маржи» → метрика margin_by_category (группировка по category линий, а не по отдельным линиям).
    Вопрос «выручка/клиенты по городам» → бери customers.city (город клиента), в reason пометь «город клиента, не место оказания услуги».
    «Оборот» = GMV. Вопрос про оборот/GMV (что происходит, динамика) → метрика gmv_dynamics_monthly или monetization_by_year; «выручка» (динамика) → revenue_dynamics_monthly/revenue_net_yoy. Эти данные ВСЕГДА есть в financials_monthly — НИКОГДА не отвечай «недостаточно» на вопрос про GMV/выручку/take_rate.
-5. Только SELECT/WITH, без точки с запятой и служебных объектов (_*).
+   Вопрос про СМЕЩЕНИЕ/искажение/динамику NPS (реально ли растёт NPS, есть ли перекос) → метрика nps_bias_trend (показывает: рост NPS идёт за счёт падения доли детракторов и снижения числа ответов, а не реального улучшения).
+   Вопрос про ЭКОНОМИЧЕСКИЙ отток / спящих клиентов / отличие реального оттока от формального → метрика economic_churn_dormant (динамика доли dormant). Формальный отток → churn_rate_formal.
+5. 🔴 НЕ считай количество клиентов через JOIN с ПОМЕСЯЧНЫМИ панелями (unit_economics_monthly, customer_activity_monthly): в них 36 строк на клиента, поэтому COUNT/SUM по клиентам раздувается в разы (получишь «миллионы клиентов» при базе ~25 000). Уникальных клиентов и отток считай ТОЛЬКО из customers / churn_reasons (1 строка на клиента).
+6. Только SELECT/WITH, без точки с запятой и служебных объектов (_*).
 
 Верни JSON {approach, metric_id?, sql?, reason}.`;
 
+// Детерминированный перехват неоднозначного superlative («лучший месяц» без метрики):
+// LLM-маршрутизация на метрику ненадёжна, поэтому форсим её здесь.
+export function isAmbiguousBestPeriod(q: string): boolean {
+  const s = q.toLowerCase();
+  const superlative = /(лучш|худш|удачн|успешн|пиков|рекордн|\bтоп\b|сильн)/.test(s);
+  const period = /(месяц|период|квартал)/.test(s);
+  const metric = /(выручк|gmv|оборот|маржа|марж|прибыл|ebitda|profit|заказ|клиент|nps|отток|take|активн|чек|трафик)/.test(s);
+  return superlative && period && !metric;
+}
+
 export async function extract(llm: LLMClient, question: string): Promise<ExtractorOutput> {
+  if (isAmbiguousBestPeriod(question)) {
+    const m = findMetric("best_month_ambiguous");
+    if (m) {
+      try {
+        const { rows, columns } = await runSelect(m.sql);
+        const out = base("metric_template", m.id, m.sql,
+          "критерий «лучший» не задан — показываем лучший месяц по разным метрикам, нужно уточнение", rows.length > 0);
+        out.rows = rows.slice(0, 1000);
+        out.row_count = rows.length;
+        out.columns = columns.map((c) => ({ name: c, type: typeof rows[0]?.[c] }));
+        return out;
+      } catch { /* падение — уходим в обычный путь ниже */ }
+    }
+  }
   const p = await callJSON(llm, SYSTEM, `Вопрос: ${question}`, PlanSchema);
   let sql = "";
   let metric_id: string | undefined;

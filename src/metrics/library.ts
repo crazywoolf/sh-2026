@@ -97,6 +97,25 @@ export const METRICS: Metric[] = [
                  round(100.0*count(*) FILTER(WHERE primary_reason='ai_alternative')/count(*),1) AS ai_pct
           FROM churn_reasons`,
   },
+  {
+    id: "economic_churn_dormant",
+    question_ru: "Экономический отток: динамика доли спящих (dormant) клиентов по годам — кто на балансе, но перестал заказывать (vs формальный отток)",
+    sql: `SELECT year(month) AS year,
+                 round(100.0*count(*) FILTER(WHERE status='dormant')/count(*),1) AS dormant_pct,
+                 round(100.0*count(*) FILTER(WHERE status='churning')/count(*),1) AS churning_pct,
+                 round(100.0*count(*) FILTER(WHERE status='active')/count(*),1) AS active_pct
+          FROM customer_activity_monthly GROUP BY 1 ORDER BY 1`,
+  },
+
+  {
+    id: "best_month_ambiguous",
+    question_ru: "«Лучший месяц/период» БЕЗ указанной метрики (неоднозначно): лучший месяц по РАЗНЫМ критериям — выручка, GMV, EBITDA — чтобы показать варианты и предложить уточнить критерий",
+    sql: `SELECT критерий, месяц, значение FROM (
+            (SELECT 'чистая выручка' AS критерий, strftime(month,'%Y-%m') AS месяц, round(revenue_net) AS значение FROM financials_monthly ORDER BY revenue_net DESC LIMIT 1)
+            UNION ALL (SELECT 'GMV (оборот)', strftime(month,'%Y-%m'), round(gmv) FROM financials_monthly ORDER BY gmv DESC LIMIT 1)
+            UNION ALL (SELECT 'EBITDA', strftime(month,'%Y-%m'), round(ebitda) FROM financials_monthly ORDER BY ebitda DESC LIMIT 1)
+          ) t`,
+  },
 
   // --- Юнит-экономика (unit_economics_monthly, последний месяц) ---
   {
@@ -154,6 +173,17 @@ export const METRICS: Metric[] = [
                             - count(*) FILTER(WHERE n.category='detractor'))/count(*),1) AS nps
           FROM nps_responses n JOIN customers c USING(customer_id)
           GROUP BY 1 ORDER BY 2 DESC`,
+  },
+  {
+    id: "nps_bias_trend",
+    question_ru: "Смещение NPS: динамика по годам с композицией (NPS, доли детракторов/промоутеров, объём ответов) — реальный рост или за счёт ухода недовольных",
+    sql: `SELECT year(response_date) AS year,
+                 round(100.0*(count(*) FILTER(WHERE category='promoter')
+                            - count(*) FILTER(WHERE category='detractor'))/count(*),1) AS nps,
+                 round(100.0*count(*) FILTER(WHERE category='detractor')/count(*),1) AS detractors_pct,
+                 round(100.0*count(*) FILTER(WHERE category='promoter')/count(*),1) AS promoters_pct,
+                 count(*) AS responses
+          FROM nps_responses GROUP BY 1 ORDER BY 1`,
   },
 
   // --- Вовлечённость, клиенты ---
