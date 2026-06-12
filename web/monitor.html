@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Meridian — мониторинг запросов</title>
+  <style>
+    :root { --brand:#5d56c4; --line:#e0e1e3; --bg:#f0f1f2; --txt:#1f2226; --mut:#6c6f76; --danger:#e53e3e; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:-apple-system,"Segoe UI",Arial,sans-serif; background:var(--bg); color:var(--txt); }
+    header { background:#fff; border-bottom:1px solid var(--line); padding:12px 20px; display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+    header h1 { font-size:16px; margin:0; }
+    .stat { font-size:13px; color:var(--mut); }
+    .stat b { color:var(--txt); }
+    button, input { font:inherit; }
+    button { background:var(--brand); color:#fff; border:none; border-radius:6px; padding:7px 12px; cursor:pointer; }
+    button.ghost { background:#fff; color:var(--txt); border:1px solid var(--line); }
+    input[type=text] { padding:7px 10px; border:1px solid var(--line); border-radius:6px; min-width:200px; }
+    label.chk { font-size:13px; color:var(--mut); display:flex; align-items:center; gap:4px; }
+    main { padding:14px 20px; }
+    table { width:100%; border-collapse:collapse; background:#fff; border:1px solid var(--line); border-radius:8px; overflow:hidden; font-size:13px; }
+    th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+    th { background:#fafafa; color:var(--mut); font-weight:600; position:sticky; top:0; }
+    td.msg { font-weight:600; max-width:380px; }
+    td.prev { color:var(--mut); max-width:420px; }
+    .s200 { color:#1a7f37; } .s400,.s422 { color:#b7791f; } .s404 { color:var(--danger); }
+    .mode { display:inline-block; padding:1px 6px; border-radius:4px; background:#eee; font-size:11px; }
+    .insf { color:var(--danger); font-weight:600; }
+    .mono { font-variant-numeric:tabular-nums; color:var(--mut); }
+    .empty { color:var(--mut); padding:30px; text-align:center; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>📡 Мониторинг запросов</h1>
+    <span class="stat">всего за окно: <b id="count">0</b> · окно: <b id="ttl">60</b> мин</span>
+    <input id="filter" type="text" placeholder="фильтр по тексту вопроса…" />
+    <label class="chk"><input type="checkbox" id="auto" checked /> автообновление 3с</label>
+    <button id="refresh" class="ghost">Обновить</button>
+    <button id="download">Скачать JSONL</button>
+  </header>
+  <main>
+    <table>
+      <thead><tr><th>Время</th><th>Код</th><th>Режим</th><th>мс</th><th>Вопрос</th><th>Ответ (превью)</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div id="empty" class="empty">Пока нет запросов. Как только тестер начнёт слать вопросы — они появятся здесь.</div>
+  </main>
+  <script>
+    let data = [];
+    const esc = (s) => String(s ?? "").replace(/[&<>]/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;" }[c]));
+    const time = (iso) => { try { return new Date(iso).toLocaleTimeString("ru"); } catch { return iso; } };
+
+    async function load() {
+      try {
+        const r = await fetch("/api/monitor/log");
+        data = await r.json();
+        render();
+      } catch { /* сеть */ }
+    }
+    function render() {
+      const f = document.getElementById("filter").value.trim().toLowerCase();
+      const rows = data.filter((e) => !f || (e.message || "").toLowerCase().includes(f));
+      document.getElementById("count").textContent = data.length;
+      document.getElementById("empty").style.display = rows.length ? "none" : "block";
+      document.getElementById("rows").innerHTML = rows.map((e) => `
+        <tr>
+          <td class="mono">${time(e.ts)}</td>
+          <td class="s${e.status}">${e.status}</td>
+          <td>${e.mode ? `<span class="mode">${esc(e.mode)}</span>` : ""}${e.insufficient ? ' <span class="insf">insuff</span>' : ""}</td>
+          <td class="mono">${e.latency_ms ?? ""}</td>
+          <td class="msg">${esc(e.message) || '<span class="prev">—</span>'}</td>
+          <td class="prev">${esc(e.response_preview || "")}</td>
+        </tr>`).join("");
+    }
+    function download() {
+      const jsonl = data.map((e) => JSON.stringify(e)).join("\n");
+      const blob = new Blob([jsonl], { type: "application/x-ndjson" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "meridian-requests-" + new Date().toISOString().slice(0, 19).replace(/:/g, "-") + ".jsonl";
+      a.click();
+    }
+    document.getElementById("refresh").onclick = load;
+    document.getElementById("download").onclick = download;
+    document.getElementById("filter").oninput = render;
+    setInterval(() => { if (document.getElementById("auto").checked) load(); }, 3000);
+    load();
+  </script>
+</body>
+</html>

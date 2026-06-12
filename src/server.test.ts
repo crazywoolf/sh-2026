@@ -4,6 +4,7 @@ import { buildServer, type ServerDeps } from "./server.ts";
 import type { FinalResponse } from "./contracts/types.ts";
 import { Inbox } from "./delivery.ts";
 import type { Report } from "./report.ts";
+import { MonitorStore } from "./monitor/store.ts";
 
 const ok: FinalResponse = {
   response: "ответ", assumptions: [], trace: [], chart: null,
@@ -17,6 +18,7 @@ function deps(over: Partial<ServerDeps> = {}): ServerDeps {
     compileNow: async (): Promise<Report> => ({ generatedAt: "t", items: [] }),
     deliver: async (r: Report) => { inbox.add(r); },
     presets: [{ title: "T", question: "q" }],
+    monitor: new MonitorStore(),
     ...over,
   };
 }
@@ -26,6 +28,31 @@ test("POST /api/chat валидный → 200 + response", async () => {
   const r = await app().inject({ method: "POST", url: "/api/chat", payload: { message: "q" } });
   assert.equal(r.statusCode, 200);
   assert.equal(r.json().response, "ответ");
+});
+
+test("монитор: запрос логируется и виден в /api/monitor/log", async () => {
+  const d = deps();
+  const a = buildServer(d);
+  await a.inject({ method: "POST", url: "/api/chat", payload: { message: "сколько клиентов?", session_id: "tester1" } });
+  const r = await a.inject({ method: "GET", url: "/api/monitor/log" });
+  assert.equal(r.statusCode, 200);
+  const log = r.json();
+  assert.equal(log[0].message, "сколько клиентов?");
+  assert.equal(log[0].session_id, "tester1");
+  assert.equal(log[0].status, 200);
+});
+
+test("монитор: 404-проба тоже логируется", async () => {
+  const d = deps();
+  const a = buildServer(d);
+  await a.inject({ method: "POST", url: "/api/hack", payload: { message: "x" } });
+  assert.ok(d.monitor.list().some((e) => e.status === 404));
+});
+
+test("GET /monitor отдаёт HTML", async () => {
+  const r = await app().inject({ method: "GET", url: "/monitor" });
+  assert.equal(r.statusCode, 200);
+  assert.match(r.headers["content-type"] as string, /html/);
 });
 
 test("пустое тело → 400", async () => {

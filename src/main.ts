@@ -8,6 +8,7 @@ import { compileReport, type Report } from "./report.ts";
 import { PRESETS } from "./presets.ts";
 import { createReportJob, startScheduler } from "./scheduler.ts";
 import { makeRecommender } from "./recommend.ts";
+import { MonitorStore } from "./monitor/store.ts";
 import type { UserQuery } from "./contracts/types.ts";
 
 const llm = createLLMClient();
@@ -15,6 +16,10 @@ const agents = buildAgents(llm);
 const recommend = makeRecommender(llm);
 const sessions = new SessionStore(5);
 const inbox = new Inbox();
+const monitor = new MonitorStore({
+  ttlMs: Number(process.env.MONITOR_TTL_MIN ?? 60) * 60_000,
+  logFile: process.env.MONITOR_LOG_DIR ? `${process.env.MONITOR_LOG_DIR}/requests.jsonl` : "logs/requests.jsonl",
+});
 
 const pipeline = async (q: UserQuery) => {
   const context = q.session_id ? sessions.get(q.session_id) : [];
@@ -33,7 +38,7 @@ const deliverOpts = {
 const compileNow = () => compileReport(pipeline, new Date().toISOString(), { recommend });
 const deliver = (rep: Report) => deliverReport(rep, deliverOpts);
 
-const app = buildServer({ pipeline, inbox, compileNow, deliver, presets: PRESETS });
+const app = buildServer({ pipeline, inbox, compileNow, deliver, presets: PRESETS, monitor });
 
 const cronExpr = process.env.SCHEDULE_CRON ?? "0 9 * * 1";
 startScheduler(cronExpr, createReportJob(pipeline, deliverOpts, undefined, { recommend }));
