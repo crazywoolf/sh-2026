@@ -73,7 +73,12 @@
     .orch{display:flex;align-items:center;gap:10px;margin-top:16px;font-size:13px;color:var(--mut);
       background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 16px;box-shadow:var(--shadow)}
     .orch b{color:var(--ink)}
-    .chips{display:flex;flex-wrap:wrap;gap:9px;margin-top:18px}
+    .dlabel{font-size:12px;font-weight:700;color:var(--brand);margin:20px 0 10px;text-transform:uppercase;letter-spacing:.05em}
+    .decisions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .dec{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:var(--shadow)}
+    .dec b{display:block;font-size:13.5px;margin-bottom:3px;color:var(--ink)}
+    .dec span{font-size:12.5px;color:var(--mut);line-height:1.45}
+    .chips{display:flex;flex-wrap:wrap;gap:9px;margin-top:14px}
     .chip{font-size:12.5px;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:999px;padding:7px 13px;
       display:inline-flex;align-items:center;gap:7px}
     .chip svg{color:var(--brand)}
@@ -404,12 +409,18 @@
       <span><b>Оркестратор</b> держит контекст диалога, в режиме ресёрча гоняет под-вопросы <b>параллельно</b> и синтезирует ответ. Гарантия: никогда не 500, при нехватке данных — <b>insufficient_data: true</b>.</span>
     </div>
 
+    <div class="dlabel">Ключевые решения — и почему</div>
+    <div class="decisions">
+      <div class="dec"><b>5 агентов, а не один промпт</b><span>Разделение ответственности; Critic проверяет ответ НЕЗАВИСИМО — ловит галлюцинации и подмены, которые один промпт пропустил бы.</span></div>
+      <div class="dec"><b>DuckDB read-only + guard-rails</b><span>Только SELECT и белый список таблиц → данные физически нельзя испортить, SQL-инъекция отбита, сервер никогда не падает в 500.</span></div>
+      <div class="dec"><b>Гибрид: ~36 метрик + guarded SQL</b><span>Проверенные цифры на частых вопросах + гибкий SQL на остальных — одновременно точность и покрытие.</span></div>
+      <div class="dec"><b>Critic-петля ≤2 + keep-best</b><span>Самокоррекция по замечанию ревизора, но кривой совет критика не деградирует уже верный ответ (берём лучший непадший).</span></div>
+      <div class="dec"><b>Честность по умолчанию</b><span>Нет данных → <code>insufficient_data</code>, не выдумываем. Это и есть boundary discipline — 15% оценки.</span></div>
+      <div class="dec"><b>Робастность: never-500 + never-hang</b><span>Таймауты LLM-вызова и пайплайна + graceful-ответ — под живого LLM-судью отвечаем всегда и в срок.</span></div>
+    </div>
     <div class="chips">
-      <span class="chip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg> DuckDB read-only + guard-rails</span>
-      <span class="chip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg> 24 проверенные метрики</span>
-      <span class="chip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg> Честность по умолчанию</span>
-      <span class="chip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg> YandexGPT 5.1 · Yandex Cloud</span>
-      <span class="chip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg> OpenAPI · CORS · /health</span>
+      <span class="chip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg> YandexGPT 5.1 · Yandex Cloud (OpenAI-совместимо)</span>
+      <span class="chip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg> OpenAPI · CORS · /health · SSE</span>
     </div>
   </section>
 
