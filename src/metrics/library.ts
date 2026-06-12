@@ -107,21 +107,21 @@ export const METRICS: Metric[] = [
   },
   {
     id: "churn_formal_vs_economic_yearly",
-    question_ru: "Отток по годам: формальный (число ушедших с датой ухода) ПРОТИВ экономического (доля спящих) — действительно ли база стала стабильнее / правда ли отток упал",
-    sql: `SELECT year, formal_churned, dormant_pct FROM
+    question_ru: "Отток по годам: формальный (число ушедших с датой ухода) ПРОТИВ экономического (доля неактивных dormant+churning на конец года) — действительно ли база стала стабильнее / правда ли отток упал",
+    sql: `SELECT year, formal_churned, inactive_pct FROM
             (SELECT year(churn_date) AS year, count(*) AS formal_churned FROM customers WHERE churn_date IS NOT NULL GROUP BY 1) f
             FULL JOIN
-            (SELECT year(month) AS year, round(100.0*count(*) FILTER(WHERE status='dormant')/count(*),1) AS dormant_pct FROM customer_activity_monthly GROUP BY 1) d USING(year)
+            (SELECT year(month) AS year, round(100.0*count(*) FILTER(WHERE status IN ('dormant','churning'))/count(*),1) AS inactive_pct FROM customer_activity_monthly WHERE month(month)=12 GROUP BY 1) d USING(year)
           ORDER BY year`,
   },
   {
     id: "economic_churn_dormant",
-    question_ru: "Экономический отток: динамика доли спящих (dormant) клиентов по годам — кто на балансе, но перестал заказывать (vs формальный отток)",
+    question_ru: "Экономический отток: доля спящих/неактивных клиентов (статусы dormant+churning) на КОНЕЦ года — кто на балансе, но перестал заказывать (vs формальный отток)",
     sql: `SELECT year(month) AS year,
+                 round(100.0*count(*) FILTER(WHERE status IN ('dormant','churning'))/count(*),1) AS inactive_pct,
                  round(100.0*count(*) FILTER(WHERE status='dormant')/count(*),1) AS dormant_pct,
-                 round(100.0*count(*) FILTER(WHERE status='churning')/count(*),1) AS churning_pct,
-                 round(100.0*count(*) FILTER(WHERE status='active')/count(*),1) AS active_pct
-          FROM customer_activity_monthly GROUP BY 1 ORDER BY 1`,
+                 round(100.0*count(*) FILTER(WHERE status='churning')/count(*),1) AS churning_pct
+          FROM customer_activity_monthly WHERE month(month)=12 GROUP BY 1 ORDER BY 1`,
   },
 
   {
@@ -200,14 +200,24 @@ export const METRICS: Metric[] = [
   },
   {
     id: "nps_bias_trend",
-    question_ru: "Смещение NPS: динамика по годам с композицией (NPS, доли детракторов/промоутеров, объём ответов) — реальный рост или за счёт ухода недовольных",
-    sql: `SELECT year(response_date) AS year,
-                 round(100.0*(count(*) FILTER(WHERE category='promoter')
-                            - count(*) FILTER(WHERE category='detractor'))/count(*),1) AS nps,
-                 round(100.0*count(*) FILTER(WHERE category='detractor')/count(*),1) AS detractors_pct,
-                 round(100.0*count(*) FILTER(WHERE category='promoter')/count(*),1) AS promoters_pct,
-                 count(*) AS responses
-          FROM nps_responses GROUP BY 1 ORDER BY 1`,
+    question_ru: "Смещение NPS: агрегатный NPS по годам vs КОГОРТНЫЙ NPS по ОДНИМ И ТЕМ ЖЕ клиентам (отвечавшим и в 2023, и в 2025) + доля детракторов — реальный рост или выживаемость",
+    sql: `SELECT a.year, a.nps_aggregate, a.detractors_pct, a.responses, c.nps_same_clients
+          FROM (
+            SELECT year(response_date) AS year,
+                   round(100.0*(count(*) FILTER(WHERE category='promoter')
+                              - count(*) FILTER(WHERE category='detractor'))/count(*),1) AS nps_aggregate,
+                   round(100.0*count(*) FILTER(WHERE category='detractor')/count(*),1) AS detractors_pct,
+                   count(*) AS responses
+            FROM nps_responses GROUP BY 1) a
+          LEFT JOIN (
+            SELECT year(n.response_date) AS year,
+                   round(100.0*(count(*) FILTER(WHERE n.category='promoter')
+                              - count(*) FILTER(WHERE n.category='detractor'))/count(*),1) AS nps_same_clients
+            FROM nps_responses n
+            JOIN (SELECT customer_id FROM nps_responses WHERE year(response_date)=2023
+                  INTERSECT SELECT customer_id FROM nps_responses WHERE year(response_date)=2025) p USING(customer_id)
+            WHERE year(n.response_date) IN (2023,2025) GROUP BY 1) c USING(year)
+          ORDER BY a.year`,
   },
 
   // --- Вовлечённость, клиенты ---
