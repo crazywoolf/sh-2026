@@ -12,6 +12,14 @@ export const METRICS: Metric[] = [
           FROM financials_monthly GROUP BY 1 ORDER BY 1`,
   },
   {
+    id: "gmv_by_year",
+    question_ru: "GMV (оборот) ПО ГОДАМ с итоговым изменением YoY % — как менялся оборот за годы",
+    sql: `SELECT year(month) AS year, round(sum(gmv)) AS gmv,
+                 round(100.0*(sum(gmv)-lag(sum(gmv)) OVER(ORDER BY year(month)))
+                       /lag(sum(gmv)) OVER(ORDER BY year(month)),1) AS yoy_pct
+          FROM financials_monthly GROUP BY 1 ORDER BY 1`,
+  },
+  {
     id: "revenue_net_yoy",
     question_ru: "Динамика чистой выручки по годам и YoY",
     sql: `SELECT year(month) AS year, sum(revenue_net) AS revenue_net,
