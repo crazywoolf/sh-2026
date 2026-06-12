@@ -79,10 +79,22 @@ export function reportToText(r: Report): string {
     }
     lines.push("");
   }
+  const risks = r.risks ?? [];
+  if (risks.length) {
+    lines.push("⚠️ <b>Риски</b>");
+    for (const x of risks) lines.push(`• ${escapeHtml(clip(x, 220))}`);
+    lines.push("");
+  }
   const recs = r.recommendations ?? [];
   if (recs.length) {
     lines.push("💡 <b>Рекомендации</b>");
     for (const rec of recs) lines.push(`• ${escapeHtml(clip(rec, 220))}`);
+    lines.push("");
+  }
+  const caveats = r.caveats ?? [];
+  if (caveats.length) {
+    lines.push("🔍 <b>Качество данных и оговорки</b>");
+    for (const x of caveats) lines.push(`• ${escapeHtml(clip(x, 200))}`);
     lines.push("");
   }
   lines.push("<i>Автоотчёт Meridian · собран по расписанию</i>");

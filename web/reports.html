@@ -73,11 +73,16 @@
         grid.appendChild(c);
       }
       body.appendChild(grid);
-      if (rep.recommendations && rep.recommendations.length) {
-        const r = document.createElement("div"); r.className = "recs";
-        r.innerHTML = "<b>💡 Рекомендации</b>" + rep.recommendations.map((x) => "<div>• " + esc(x) + "</div>").join("");
-        body.appendChild(r);
-      }
+      const block = (title, arr, color, bg) => {
+        if (!arr || !arr.length) return;
+        const d = document.createElement("div");
+        d.style.cssText = "margin-top:12px;padding:11px 13px;border-left:3px solid " + color + ";background:" + bg + ";border-radius:0 8px 8px 0;font-size:13px";
+        d.innerHTML = "<b>" + title + "</b>" + arr.map((x) => "<div>• " + esc(x) + "</div>").join("");
+        body.appendChild(d);
+      };
+      block("⚠️ Риски", rep.risks, "#e24b4a", "#fceceb");
+      block("💡 Рекомендации", rep.recommendations, "#5d56c4", "#eeedfe");
+      block("🔍 Качество данных и оговорки", rep.caveats, "#ba7517", "#fbf2e3");
       top.onclick = () => { body.style.display = body.style.display === "none" ? "block" : "none"; };
       wrap.appendChild(top); wrap.appendChild(body);
       return wrap;

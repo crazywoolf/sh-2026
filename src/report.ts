@@ -9,9 +9,18 @@ export type ReportItem = {
   insufficient_data: boolean;
   alert: boolean;
 };
-export type Report = { generatedAt: string; items: ReportItem[]; recommendations?: string[] };
+export type Report = {
+  generatedAt: string;
+  items: ReportItem[];
+  recommendations?: string[];
+  risks?: string[];
+  caveats?: string[];
+};
 
-export type CompileOpts = { recommend?: (items: ReportItem[]) => Promise<string[]> };
+export type CompileOpts = {
+  recommend?: (items: ReportItem[]) => Promise<string[]>;
+  briefing?: (items: ReportItem[]) => Promise<{ risks: string[]; caveats: string[] }>;
+};
 
 export async function compileReport(
   pipeline: (q: UserQuery) => Promise<FinalResponse>,
@@ -27,5 +36,6 @@ export async function compileReport(
     });
   }
   const recommendations = opts?.recommend ? await opts.recommend(items) : [];
-  return { generatedAt, items, recommendations };
+  const brief = opts?.briefing ? await opts.briefing(items) : { risks: [], caveats: [] };
+  return { generatedAt, items, recommendations, risks: brief.risks, caveats: brief.caveats };
 }

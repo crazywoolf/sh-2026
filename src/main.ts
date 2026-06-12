@@ -6,7 +6,7 @@ import { SessionStore } from "./session/store.ts";
 import { Inbox, deliver as deliverReport } from "./delivery.ts";
 import { compileReport, type Report } from "./report.ts";
 import { PRESETS } from "./presets.ts";
-import { makeRecommender } from "./recommend.ts";
+import { makeRecommender, makeBriefing } from "./recommend.ts";
 import { MonitorStore } from "./monitor/store.ts";
 import { ScheduleStore, type Schedule } from "./schedules/store.ts";
 import { ScheduleManager } from "./schedules/manager.ts";
@@ -17,6 +17,7 @@ const LOG_DIR = process.env.MONITOR_LOG_DIR ?? "logs";
 const llm = createLLMClient();
 const agents = buildAgents(llm);
 const recommend = makeRecommender(llm);
+const briefing = makeBriefing(llm);
 const sessions = new SessionStore(5);
 const inbox = new Inbox();
 const monitor = new MonitorStore({
@@ -38,7 +39,7 @@ const deliverOpts = {
     ? { token: process.env.TELEGRAM_BOT_TOKEN, chatId: process.env.TELEGRAM_CHAT_ID }
     : undefined,
 };
-const compileNow = () => compileReport(pipeline, new Date().toISOString(), { recommend });
+const compileNow = () => compileReport(pipeline, new Date().toISOString(), { recommend, briefing });
 const deliver = (rep: Report) => deliverReport(rep, deliverOpts);
 
 // Расписания автоотчётов: персистентный store + динамический планировщик
@@ -47,7 +48,7 @@ const schedules = new ScheduleStore({
   seed: [{ id: "health", name: "Дашборд здоровья", cron: process.env.SCHEDULE_CRON ?? "0 9 * * 1", enabled: true }],
 });
 const runFor = async (s: Schedule) => {
-  const report = await compileReport(pipeline, new Date().toISOString(), { recommend });
+  const report = await compileReport(pipeline, new Date().toISOString(), { recommend, briefing });
   await deliver(report);
   schedules.markRun(s.id, new Date().toISOString());
 };
