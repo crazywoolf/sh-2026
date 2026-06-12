@@ -65,9 +65,19 @@ export async function runPipeline(
     };
   }
 
-  const results = [];
-  for (const sub of planned.sub_questions) {
-    results.push(await answerOne(a, sub, trace));
+  // Под-вопросы — ПАРАЛЛЕЛЬНО (быстро, чтобы не упереться в таймаут прокси на синтез-вопросах).
+  // Падение одного под-вопроса не валит весь ответ.
+  const settled = await Promise.all(
+    planned.sub_questions.map((sub) => answerOne(a, sub, trace).catch(() => null)),
+  );
+  const results = settled.filter((r): r is NonNullable<typeof r> => r !== null);
+
+  if (results.length === 0) {
+    return {
+      response: `Недостаточно данных для надёжного ответа.`,
+      assumptions: [], trace, chart: null, insufficient_data: true, session_id,
+      plan: planSummary, sub_answers: [],
+    };
   }
 
   const ok = results.filter((r) => !r.rejected && r.ext.data_sufficient);
