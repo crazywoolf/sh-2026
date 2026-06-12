@@ -163,6 +163,12 @@ export const METRICS: Metric[] = [
           FROM unit_economics_monthly WHERE month='2025-12-01' GROUP BY 1 ORDER BY 2`,
   },
   {
+    id: "margin_by_year",
+    question_ru: "Валовая маржа ПО ГОДАМ (динамика): здорова ли маржа, растёт или падает — 32.4%→26.3%",
+    sql: `SELECT year(month) AS year, round(100.0*avg(gross_margin_pct),1) AS margin_pct
+          FROM unit_economics_monthly GROUP BY 1 ORDER BY 1`,
+  },
+  {
     id: "margin_by_category",
     question_ru: "Валовая маржа по категориям продуктовых линий (high/mid/low)",
     sql: `SELECT pl.category, round(avg(ue.gross_margin_pct),3) AS gross_margin

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { analyze } from "./analyst.ts";
+import { analyze, sanitizeBusiness } from "./analyst.ts";
 import type { LLMClient } from "../llm/client.ts";
 import type { ExtractorOutput } from "../contracts/types.ts";
 
@@ -20,4 +20,12 @@ test("маппит ответ LLM в AnalystOutput", async () => {
   const r = await analyze(c, "выручка по линиям", ext);
   assert.match(r.answer, /Разработка/);
   assert.equal(r.confidence, "high");
+});
+
+test("sanitizeBusiness убирает имена таблиц/полей БД из ответа совету", () => {
+  assert.doesNotMatch(sanitizeBusiness("проанализировать данные из таблицы churn_reasons"), /churn_reasons|таблиц/);
+  assert.doesNotMatch(sanitizeBusiness("анализ churn_reasons и unit_economics_monthly"), /churn_reasons|unit_economics_monthly/);
+  assert.equal(sanitizeBusiness("анализ таблицы churn_reasons"), "анализ причин оттока");
+  assert.match(sanitizeBusiness("доля dormant растёт"), /спящие клиенты/);
+  assert.equal(sanitizeBusiness("SMB убыточен: LTV/CAC 0.59"), "SMB убыточен: LTV/CAC 0.59");
 });
