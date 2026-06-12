@@ -26,6 +26,18 @@ const esc = (s) => String(s ?? "").replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<"
 const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
 const scroll = () => { thread.scrollTop = thread.scrollHeight; };
 
+// inline-SVG иконки (stroke, currentColor) — в стиле сайта
+const ICONS = {
+  research: '<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>',
+  message: '<path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/>',
+  alert: '<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+  bulb: '<path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2Z"/>',
+  list: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
+  copy: '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>',
+  code: '<path d="m16 18 4-4-4-4M8 6l-4 4 4 4"/>',
+};
+const svg = (n, sz = 14) => `<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">${ICONS[n] || ""}</svg>`;
+
 // --- мини-markdown: абзацы по пустым строкам, **жирный**, `код`, списки ---
 function md(text) {
   const inline = (s) => esc(s).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+?)\*\*/g, "<strong>$1</strong>");
@@ -92,13 +104,13 @@ function botAnswer(node, r) {
 
   // пилюли-агенты + режим
   const agents = el("div", "agents");
-  const modePill = el("span", "apill mode", isResearch ? "🔬 Исследование" : "💬 BI");
+  const modePill = el("span", "apill mode", svg(isResearch ? "research" : "message", 12) + "<span>" + (isResearch ? "Исследование" : "BI") + "</span>");
   agents.appendChild(modePill);
   AGENTS.filter((a) => ran.includes(a.key)).forEach((a) => agents.appendChild(el("span", "apill on", a.label)));
   node.appendChild(agents);
 
   const ans = el("div", "answer" + (r.insufficient_data ? " insufficient" : ""));
-  if (r.insufficient_data) ans.appendChild(el("div", "ins-tag", "⚠ Данных недостаточно"));
+  if (r.insufficient_data) ans.appendChild(el("div", "ins-tag", svg("alert", 15) + "<span>Данных недостаточно</span>"));
 
   // декомпозиция research
   if (isResearch && r.plan.sub_questions && r.plan.sub_questions.length > 1) {
@@ -113,10 +125,10 @@ function botAnswer(node, r) {
   // действия
   const sql = (r.trace || []).find((t) => t.sql)?.sql;
   const meta = el("div", "meta");
-  if (r.assumptions && r.assumptions.length) meta.appendChild(toggleBtn("💡 Допущения (" + r.assumptions.length + ")", r.assumptions.map((a) => '<div class="d-item">• ' + esc(a) + "</div>").join("")));
-  if (r.trace && r.trace.length) meta.appendChild(toggleBtn("🔎 Трасса агентов", '<div class="trace-line">' + r.trace.map((t) => t.agent + (t.verdict ? "(" + t.verdict + ")" : "")).join(" → ") + "</div>"));
-  const cp = el("button", null, "⧉ Копировать"); cp.onclick = () => copy(r.response); meta.appendChild(cp);
-  if (sql) { const sb = el("button", null, "{} SQL"); sb.onclick = () => copy(sql); meta.appendChild(sb); }
+  if (r.assumptions && r.assumptions.length) meta.appendChild(toggleBtn(svg("bulb", 13) + "Допущения (" + r.assumptions.length + ")", r.assumptions.map((a) => '<div class="d-item">• ' + esc(a) + "</div>").join("")));
+  if (r.trace && r.trace.length) meta.appendChild(toggleBtn(svg("list", 13) + "Трасса агентов", '<div class="trace-line">' + r.trace.map((t) => t.agent + (t.verdict ? "(" + t.verdict + ")" : "")).join(" → ") + "</div>"));
+  const cp = el("button", null, svg("copy", 13) + "Копировать"); cp.onclick = () => copy(r.response); meta.appendChild(cp);
+  if (sql) { const sb = el("button", null, svg("code", 13) + "SQL"); sb.onclick = () => copy(sql); meta.appendChild(sb); }
   ans.appendChild(meta);
   node.appendChild(ans);
 
