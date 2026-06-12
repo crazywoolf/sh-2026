@@ -118,6 +118,13 @@ export const METRICS: Metric[] = [
           FROM unit_economics_monthly ue JOIN product_lines pl USING(product_line_id)
           GROUP BY 1 ORDER BY 2 DESC`,
   },
+  {
+    id: "margin_by_product_line",
+    question_ru: "Прибыльность (валовая маржа) по продуктовым линиям — какая линия самая прибыльная",
+    sql: `SELECT pl.name AS product_line, round(avg(ue.gross_margin_pct),3) AS gross_margin
+          FROM unit_economics_monthly ue JOIN product_lines pl USING(product_line_id)
+          GROUP BY 1 ORDER BY 2 DESC`,
+  },
 
   // --- NPS (nps_responses, +срезы) ---
   {
