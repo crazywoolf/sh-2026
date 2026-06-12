@@ -195,6 +195,10 @@ document.getElementById("new-chat").onclick = () => {
 renderSuggestions();
 updateSend();
 
+// авто-запуск вопроса из ссылки (?q=…) — клик по колонке-гипотезе на /demo
+const _qParam = new URLSearchParams(location.search).get("q");
+if (_qParam) { history.replaceState({}, "", location.pathname); sendText(_qParam); }
+
 // --- Дровер автоотчётов ---
 const DEMO_CRON = "*/5 * * * *";
 const overlay = document.getElementById("overlay");

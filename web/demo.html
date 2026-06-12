@@ -106,6 +106,55 @@
       margin-top:4px;max-width:460px;height:230px}
     .verdict{display:inline-flex;align-items:center;gap:8px;background:#e4f5ea;color:var(--ok);font-weight:700;
       padding:8px 14px;border-radius:10px;font-size:14px}
+    /* проблема */
+    .prob{display:grid;grid-template-columns:1.05fr .95fr;gap:24px;align-items:center}
+    .facts{display:flex;flex-direction:column;gap:12px}
+    .fact{display:flex;gap:14px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:13px;padding:14px 16px;box-shadow:var(--shadow)}
+    .fact .b{font-size:25px;font-weight:800;letter-spacing:-.02em;min-width:96px;color:var(--danger)}
+    .fact .b.warn{color:var(--warn)}.fact .b.ink{color:var(--ink)}
+    .fact p{margin:0;font-size:13.5px;color:var(--mut);line-height:1.45}
+    .split{background:linear-gradient(160deg,#efeefb,#fbf0f0);border:1px solid var(--line);border-radius:16px;padding:22px;box-shadow:var(--shadow)}
+    .split h4{margin:0 0 6px;font-size:15px}.split .sub{font-size:12.5px;color:var(--mut);margin:0 0 12px}
+    .camp{display:flex;align-items:center;gap:11px;font-size:13.5px;padding:9px 0;border-bottom:1px dashed #d9d8ec}
+    .camp:last-child{border:0}
+    .camp i{width:27px;height:27px;border-radius:7px;display:grid;place-items:center;font-style:normal;font-weight:800;font-size:12px;color:#fff;background:var(--brand);flex:0 0 auto}
+    .camp i.c2{background:#7b74e0}.camp i.c3{background:var(--warn)}.camp i.c4{background:var(--danger)}
+    /* колонки-гипотезы */
+    .cases{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+    .case{display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);border-radius:15px;padding:16px;
+      box-shadow:var(--shadow);text-decoration:none;color:inherit;transition:.16s;position:relative;overflow:hidden}
+    .case::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--brand)}
+    .case.c2::before{background:#7b74e0}.case.c3::before{background:var(--warn)}.case.c4::before{background:var(--danger)}
+    .case:hover{transform:translateY(-3px);box-shadow:0 16px 34px rgba(30,28,70,.14);border-color:#cfc9f0}
+    .case .dir{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--brand)}
+    .case.c3 .dir{color:var(--warn)}.case.c4 .dir{color:var(--danger)}
+    .case h4{margin:5px 0 2px;font-size:15px;line-height:1.2}
+    .case .who{font-size:12px;color:var(--mut);font-style:italic;margin-bottom:11px}
+    .case .q{font-size:12.5px;font-weight:600;background:#f4f3fb;border:1px solid #e6e3f7;border-radius:9px;padding:8px 10px;margin-bottom:11px;line-height:1.4}
+    .case .lbl{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#a2a4ab;margin-bottom:4px}
+    .case .data{font-size:12.5px;line-height:1.5;color:#33363c;margin-bottom:6px}
+    .case .data b{color:var(--ink)}
+    .case .verd{margin-top:auto;font-size:12px;line-height:1.45;border-top:1px dashed var(--line);padding-top:10px;color:var(--mut)}
+    .case .verd b{color:var(--ink)}
+    .case .go{display:inline-flex;align-items:center;gap:6px;margin-top:11px;font-size:12px;font-weight:700;color:var(--brand)}
+    .case.c3 .go{color:var(--warn)}.case.c4 .go{color:var(--danger)}
+    .case.c4{background:#fffaf2}
+    .tagx{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;margin-bottom:8px;background:#fbf0db;color:var(--warn)}
+    .hint-click{font-size:12.5px;color:var(--mut);margin-top:14px;display:flex;align-items:center;gap:7px}
+    /* синтез */
+    .tradeoffs{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
+    .to{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:13px;padding:13px 16px;box-shadow:var(--shadow)}
+    .to .l,.to .r{flex:1;font-size:13px;font-weight:600;line-height:1.3}
+    .to .l{text-align:right}.to .vs{color:#c4c4d0;font-weight:800;font-size:12px;flex:0 0 auto}
+    .to .r{color:var(--mut)}
+    .beforeafter{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .ba{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow)}
+    .ba.accent{background:linear-gradient(160deg,#efeefb,#fff)}
+    .ba .t{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#a2a4ab;margin-bottom:12px}
+    .ba .row{display:flex;align-items:center;gap:11px;font-size:14px;margin:9px 0}
+    .ba .row .from{color:var(--mut)}
+    .ba .row .to2{font-weight:700;color:var(--ink)}
+    .ba .row svg{color:var(--brand);flex:0 0 auto}
     .foot{text-align:center;color:var(--mut);font-size:13px;padding:30px}
     @media (max-width:720px){
       .top{padding:10px 14px;gap:8px}
@@ -122,6 +171,13 @@
       .checks{grid-template-columns:1fr}
       .step{grid-template-columns:38px 1fr;gap:12px}.bub{width:36px;height:36px}
       .step:not(:last-child)::before{left:18px;top:40px}
+      .prob{grid-template-columns:1fr}
+      .cases{grid-template-columns:1fr}
+      .tradeoffs{grid-template-columns:1fr}
+      .beforeafter{grid-template-columns:1fr}
+    }
+    @media (min-width:721px) and (max-width:980px){
+      .cases{grid-template-columns:repeat(2,1fr)}
     }
   </style>
 </head>
@@ -139,6 +195,9 @@
 
   <nav class="dots">
     <a href="#hero" class="on"><span>Обзор</span></a>
+    <a href="#problem"><span>Проблема совета</span></a>
+    <a href="#cases"><span>4 гипотезы</span></a>
+    <a href="#synth"><span>Карта компромиссов</span></a>
     <a href="#arch"><span>Архитектура</span></a>
     <a href="#trace"><span>Транскрипт</span></a>
   </nav>
@@ -150,7 +209,7 @@
     <p>Meridian заменяет 5–10 дней ожидания тикета аналитики на ответ за минуты. Пять агентов: интерпретация → SQL → бизнес-вывод → критика галлюцинаций → график. Честно говорит «данных недостаточно» вместо выдумок.</p>
     <div class="cta">
       <a class="btn primary" href="/">Задать вопрос системе</a>
-      <a class="btn" href="#arch">Как это устроено ↓</a>
+      <a class="btn" href="#problem">С чего всё началось ↓</a>
     </div>
     <div class="stats">
       <div class="stat"><b>5</b><span>агентов в конвейере</span></div>
@@ -160,9 +219,117 @@
     </div>
   </section>
 
+  <!-- PROBLEM -->
+  <section class="slide" id="problem">
+    <div class="eyebrow">Кейс · Meridian</div>
+    <h2 class="title">Совет директоров расколот — простого ответа нет</h2>
+    <p class="lead">Meridian — B2B-маркетплейс услуг для среднего бизнеса. Позиции слабеют, а аналитический отдел отвечает на вопросы 5–10 дней через тикеты. Совету нужно решение сейчас.</p>
+    <div class="prob">
+      <div class="facts">
+        <div class="fact"><div class="b">−4%</div><p>выручка год к году — устойчивое снижение</p></div>
+        <div class="fact"><div class="b">23%/год</div><p>отток клиентов: уходят к нишевым AI-инструментам</p></div>
+        <div class="fact"><div class="b warn">5–10 дней</div><p>столько ждёт ответа совет — через тикет аналитикам</p></div>
+      </div>
+      <div class="split">
+        <h4>Четыре лагеря в совете</h4>
+        <p class="sub">У каждого направления свои сторонники и свои данные</p>
+        <div class="camp"><i>01</i><span>Встроить AI в платформу — стать маркетплейсом AI-услуг</span></div>
+        <div class="camp"><i class="c2">02</i><span>Уйти в крупный сегмент (Large)</span></div>
+        <div class="camp"><i class="c3">03</i><span>Удерживать ядро — клиенты + юнит-экономика</span></div>
+        <div class="camp"><i class="c4">04</i><span>Сначала понять причины оттока</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CASES (clickable columns) -->
+  <section class="slide" id="cases">
+    <div class="eyebrow"><span class="n">★</span> Сценарий · 4 гипотезы</div>
+    <h2 class="title">Каждый представитель проверяет свою ставку через Meridian</h2>
+    <p class="lead">Один датасет, четыре вопроса — четыре вывода. Кликните по гипотезе, чтобы задать её системе вживую.</p>
+    <div class="cases">
+      <a class="case" data-q="Как активность клиентов в AI-функциях связана с выручкой?">
+        <div class="dir">01 · AI-маркетплейс</div>
+        <h4>Встроить AI в платформу</h4>
+        <div class="who">«Будущее — AI-услуги, инвестируем в платформу»</div>
+        <div class="lbl">Вопрос к Meridian</div>
+        <div class="q">Как активность в AI-функциях связана с выручкой?</div>
+        <div class="lbl">Что показали данные</div>
+        <div class="data">Выручка ↓ <b>689М → 561М</b>, активность тоже падает. Рост вовлечённости <b>не тянет</b> деньги за собой.</div>
+        <div class="verd"><b>Вывод:</b> активность ≠ выручка. Инвестиции в AI давят на EBITDA — ставку мерить прямой выручкой.</div>
+        <span class="go">Спросить вживую →</span>
+      </a>
+      <a class="case c2" data-q="Какая юнит-экономика в крупном сегменте Large и где сосредоточен GMV по сегментам?">
+        <div class="dir">02 · Крупный сегмент</div>
+        <h4>Уйти в Large</h4>
+        <div class="who">«Крупные клиенты прибыльнее — фокус на них»</div>
+        <div class="lbl">Вопрос к Meridian</div>
+        <div class="q">Юнит-экономика Large и где сосредоточен GMV?</div>
+        <div class="lbl">Что показали данные</div>
+        <div class="data">У Large лучшая экономика (CAC ~43К, LTV ~275К, окуп. 1.9 мес), <b>но Large — лишь 25% GMV</b>; ¾ оборота в Mid+SMB.</div>
+        <div class="verd"><b>Вывод:</b> крупный сегмент ↔ GMV. Уход в Large = отказ от ¾ оборота (1953 клиента против 22 000).</div>
+        <span class="go">Спросить вживую →</span>
+      </a>
+      <a class="case c3" data-q="Сколько стоит удержание клиентов скидками и как это влияет на маржу?">
+        <div class="dir">03 · Удержать ядро</div>
+        <h4>Защитить клиентов скидками</h4>
+        <div class="who">«Удержим базу — дадим скидки и условия»</div>
+        <div class="lbl">Вопрос к Meridian</div>
+        <div class="q">Сколько стоит удержание скидками и что с маржой?</div>
+        <div class="lbl">Что показали данные</div>
+        <div class="data">Валовая маржа уже волатильна <b>13–52%</b>; удержание идёт из opex и давит на неё сильнее.</div>
+        <div class="verd"><b>Вывод:</b> удержание скидками ↔ маржа. Считать по юнит-экономике, а не «лишь бы остались».</div>
+        <span class="go">Спросить вживую →</span>
+      </a>
+      <a class="case c4" data-q="Почему клиенты уходят? Каковы причины оттока?">
+        <div class="dir">04 · Понять отток</div>
+        <h4>Сначала причины</h4>
+        <div class="who">«Не лечим симптом — ищем причину ухода»</div>
+        <div class="lbl">Вопрос к Meridian</div>
+        <div class="q">Почему клиенты уходят?</div>
+        <div class="lbl">Что показали данные</div>
+        <div class="data"><b>Цена — №1 (24.6%)</b>, нет потребности 18.9%, качество 17.3%. <b>AI-альтернативы лишь 14.7%</b>.</div>
+        <span class="tagx">⚠ честная оговорка</span>
+        <div class="verd"><b>Данные опровергают интуицию:</b> уходят не «к AI», а из-за цены. Система оговаривает: это <b>заявленные</b> причины, не доказанная причинность.</div>
+        <span class="go">Спросить вживую →</span>
+      </a>
+    </div>
+    <div class="hint-click">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11.5 4 9l16-6-6 16-2.5-5L9 11.5Z"/></svg>
+      Это реальные вопросы — клик откроет чат и система ответит теми же цифрами.
+    </div>
+  </section>
+
+  <!-- SYNTHESIS -->
+  <section class="slide" id="synth">
+    <div class="eyebrow">Итог сценария</div>
+    <h2 class="title">Совет получает не одну метрику, а карту компромиссов</h2>
+    <p class="lead">Ни одно направление не «выигрывает» в вакууме — у каждого своя цена. Meridian показывает компромиссы явно: с цифрами, методом и допущениями.</p>
+    <div class="tradeoffs">
+      <div class="to"><span class="l">Инвестиции в AI</span><span class="vs">↔</span><span class="r">EBITDA</span></div>
+      <div class="to"><span class="l">Крупный сегмент</span><span class="vs">↔</span><span class="r">GMV</span></div>
+      <div class="to"><span class="l">Удержание скидками</span><span class="vs">↔</span><span class="r">маржа</span></div>
+      <div class="to"><span class="l">Активность клиентов</span><span class="vs">≠</span><span class="r">выручка</span></div>
+    </div>
+    <div class="beforeafter">
+      <div class="ba">
+        <div class="t">Что меняет Meridian</div>
+        <div class="row"><span class="from">тикет аналитикам 5–10 дней</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          <span class="to2">ответ за минуты</span></div>
+        <div class="row"><span class="from">«мне кажется»</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          <span class="to2">«цифры, метод, допущения»</span></div>
+      </div>
+      <div class="ba accent">
+        <div class="t">Дисциплина границ</div>
+        <p style="margin:0;font-size:14px;line-height:1.55;color:#33363c">Где данных не хватает или они косвенные — система <b>не выдумывает</b>, а помечает <code>insufficient_data</code> и отделяет заявленное от доказанного. Честность важнее красивого ответа.</p>
+      </div>
+    </div>
+  </section>
+
   <!-- ARCHITECTURE -->
   <section class="slide" id="arch">
-    <div class="eyebrow"><span class="n">1</span> Слайд · Архитектура</div>
+    <div class="eyebrow">Под капотом · Архитектура</div>
     <h2 class="title">Пять агентов под управлением оркестратора</h2>
     <p class="lead">Каждый агент — отдельная ответственность и отдельный промпт. Critic — ключевой компонент оценки: ловит галлюцинации и подмены, возвращая работу назад до 2 раз.</p>
 
@@ -218,7 +385,7 @@
 
   <!-- TRANSCRIPT -->
   <section class="slide" id="trace">
-    <div class="eyebrow"><span class="n">2</span> Слайд · Транскрипт</div>
+    <div class="eyebrow">Под капотом · Транскрипт</div>
     <h2 class="title">Как система пришла к ответу</h2>
     <p class="lead">Реальный прогон на тест-кейсе: <b>«Какое отношение LTV/CAC по сегментам? Где привлечение убыточно?»</b> — видно каждый шаг конвейера.</p>
 
@@ -291,7 +458,9 @@
   <script>
     // активная точка навигации
     const dots=[...document.querySelectorAll('.dots a')];
-    const secs=['hero','arch','trace'].map(id=>document.getElementById(id));
+    const secs=['hero','problem','cases','synth','arch','trace'].map(id=>document.getElementById(id));
+    // кликабельные колонки-гипотезы → чат с этим вопросом
+    document.querySelectorAll('.case[data-q]').forEach(a=>{a.href='/?q='+encodeURIComponent(a.dataset.q);});
     const io=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){
       dots.forEach(d=>d.classList.toggle('on',d.getAttribute('href')==='#'+e.target.id));}});},{threshold:.5});
     secs.forEach(s=>io.observe(s));
