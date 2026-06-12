@@ -250,6 +250,23 @@ export const METRICS: Metric[] = [
     question_ru: "Отрасли клиентов по количеству",
     sql: `SELECT industry, count(*) AS customers FROM customers GROUP BY 1 ORDER BY 2 DESC`,
   },
+  {
+    id: "customers_by_segment",
+    question_ru: "Распределение КЛИЕНТОВ по сегментам (Large/Mid/SMB): количество и доля — какой сегмент крупнейший по ЧИСЛУ клиентов (есть все 3 сегмента!)",
+    sql: `SELECT segment, count(*) AS customers, round(100.0*count(*)/sum(count(*)) OVER(),1) AS pct
+          FROM customers GROUP BY 1 ORDER BY 2 DESC`,
+  },
+  {
+    id: "customers_by_size",
+    question_ru: "Распределение клиентов по РАЗМЕРУ компании (число сотрудников, employee_count_band: <50 / 50-200 / 200-500 / 500+)",
+    sql: `SELECT employee_count_band, count(*) AS customers, round(100.0*count(*)/sum(count(*)) OVER(),1) AS pct
+          FROM customers GROUP BY 1 ORDER BY 2 DESC`,
+  },
+  {
+    id: "product_lines_catalog",
+    question_ru: "Каталог продуктовых линий: название, категория, дата запуска (launch_date), статус — какая линия запущена последней/первой, возраст линий",
+    sql: `SELECT name, category, launch_date, status FROM product_lines ORDER BY launch_date DESC`,
+  },
 ];
 
 export function findMetric(id: string): Metric | undefined {

@@ -132,4 +132,12 @@ export const REG_QUESTIONS: RegQ[] = [
     assert: { insufficient: false, includesAny: ["выручк", "take", "комисс", "снизил", "падает", "не"] }, note: "GMV/заказ стабилен, выручка/заказ ↓" },
   { id: 44, cat: "Перенос", q: "Можно ли сказать, что валовая маржа у нас здоровая и растёт?",
     assert: { insufficient: false, includesAny: ["сниж", "падает", "26", "32", "не раст", "ebitda"] }, note: "маржа падает 32→26%" },
+
+  // ── АНТИ-ЛОЖНЫЙ-ОТКАЗ на отвечаемых полях (найдено пред-полётом) ──
+  { id: 45, cat: "Срезы", q: "Как клиенты распределены по размеру компании (число сотрудников)?",
+    assert: { insufficient: false, includesAny: ["50", "сотрудник", "размер"] }, note: "employee_count_band есть" },
+  { id: 46, cat: "Срезы", q: "Какая продуктовая линия запущена последней?",
+    assert: { insufficient: false, includesAny: ["аутсорс", "2021", "запущен"] }, note: "launch_date есть" },
+  { id: 47, cat: "Срезы", q: "Какой сегмент клиентов самый крупный по количеству?",
+    assert: { insufficient: false, numbers: ["15659"], includesAny: ["smb", "mid", "large"] }, note: "все 3 сегмента, не «единственный»" },
 ];
