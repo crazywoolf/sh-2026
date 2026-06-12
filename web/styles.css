@@ -92,6 +92,24 @@ canvas { max-width: 100%; }
 .disclosure { margin-top: 8px; font-size: 13px; color: var(--txt-2); }
 .disclosure .d-item { padding: 3px 0; }
 .trace-line { font-family: var(--mono); font-size: 12px; color: var(--txt-2); }
+.trace-box { margin-top: 6px; }
+.trace-chain { font-family: var(--mono); font-size: 11.5px; color: var(--txt-3); margin-bottom: 10px;
+  padding-bottom: 8px; border-bottom: 1px dashed var(--line); word-break: break-word; }
+.trace-step { display: grid; grid-template-columns: 124px 1fr; gap: 12px; padding: 8px 0;
+  border-bottom: 1px solid var(--line); align-items: start; }
+.trace-step:last-child { border-bottom: 0; }
+.trace-role { font-size: 12.5px; line-height: 1.3; }
+.trace-role b { display: block; color: var(--txt); }
+.trace-role span { color: var(--txt-3); font-size: 11px; }
+.trace-detail { font-size: 12.5px; color: var(--txt); line-height: 1.5; min-width: 0; }
+.trace-sql { margin: 6px 0 0; background: #1c1b29; color: #e9e8f5; border-radius: 8px; padding: 9px 11px;
+  overflow-x: auto; font: 11.5px/1.5 var(--mono); white-space: pre; }
+.vbadge { display: inline-block; font-weight: 700; font-size: 11px; padding: 2px 8px; border-radius: 6px; text-transform: uppercase; }
+.vbadge.v-approved { background: #e4f5ea; color: #1a7f37; }
+.vbadge.v-revise { background: var(--warn-bg); color: var(--danger); }
+.vbadge.v-reject { background: #fdeceb; color: #c2410c; }
+.trace-loop { font-size: 11px; color: var(--brand); font-style: italic; }
+@media (max-width: 600px) { .trace-step { grid-template-columns: 1fr; gap: 3px; } }
 
 .followups { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
 .fchip { font-size: 12px; padding: 5px 11px; border: 1px solid var(--line-strong); border-radius: 20px; color: var(--brand-strong); background: var(--surface); }

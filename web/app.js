@@ -97,6 +97,31 @@ function thinkingMsg() {
 
 function copy(text) { navigator.clipboard && navigator.clipboard.writeText(text); }
 
+// Пошаговая трасса агентов (как в транскрипте): роль + что сделал + вердикт + SQL + петля Critic.
+const TRACE_ROLE = {
+  planner: ["Planner", "режим обработки и декомпозиция"],
+  extractor: ["Extractor", "вопрос → SQL → DuckDB"],
+  analyst: ["Analyst", "цифры → бизнес-вывод"],
+  critic: ["Critic", "проверка по чек-листу ловушек"],
+  visualizer: ["Visualization", "выбор графика"],
+};
+function traceHtml(r) {
+  const t = r.trace || [];
+  const chain = t.map((x) => x.agent + (x.verdict ? "(" + x.verdict + ")" : "")).join(" → ");
+  let critN = 0;
+  const steps = t.map((x) => {
+    const role = TRACE_ROLE[x.agent] || [x.agent, ""];
+    let d = "";
+    if (x.agent === "planner") d = "режим: <b>" + esc(r.plan && r.plan.mode || x.note || "—") + "</b>" + (r.plan && r.plan.sub_questions && r.plan.sub_questions.length > 1 ? " · " + r.plan.sub_questions.length + " под-вопроса" : "");
+    else if (x.agent === "extractor") d = (x.rows != null ? "<b>" + x.rows + "</b> строк" : "") + (x.sql ? '<pre class="trace-sql">' + esc(x.sql.trim()) + "</pre>" : "");
+    else if (x.agent === "analyst") d = esc(x.note || "");
+    else if (x.agent === "critic") { critN++; d = '<span class="vbadge v-' + esc(x.verdict || "") + '">' + esc(x.verdict || "") + "</span>" + (critN > 1 ? ' <span class="trace-loop">↻ повторная проверка (петля)</span>' : ""); }
+    else if (x.agent === "visualizer") d = "график: <b>" + esc(x.note || "—") + "</b>";
+    return '<div class="trace-step"><div class="trace-role"><b>' + role[0] + '</b><span>' + role[1] + '</span></div><div class="trace-detail">' + d + "</div></div>";
+  }).join("");
+  return '<div class="trace-chain">' + esc(chain) + "</div>" + steps;
+}
+
 function botAnswer(node, r) {
   clearInterval(node._timer);
   node.innerHTML = "";
@@ -127,7 +152,7 @@ function botAnswer(node, r) {
   const sql = (r.trace || []).find((t) => t.sql)?.sql;
   const meta = el("div", "meta");
   if (r.assumptions && r.assumptions.length) meta.appendChild(toggleBtn(svg("bulb", 13) + "Допущения (" + r.assumptions.length + ")", r.assumptions.map((a) => '<div class="d-item">• ' + esc(a) + "</div>").join("")));
-  if (r.trace && r.trace.length) meta.appendChild(toggleBtn(svg("list", 13) + "Трасса агентов", '<div class="trace-line">' + r.trace.map((t) => t.agent + (t.verdict ? "(" + t.verdict + ")" : "")).join(" → ") + "</div>"));
+  if (r.trace && r.trace.length) meta.appendChild(toggleBtn(svg("list", 13) + "Трасса агентов", '<div class="trace-box">' + traceHtml(r) + "</div>"));
   const cp = el("button", null, svg("copy", 13) + "Копировать"); cp.onclick = () => copy(r.response); meta.appendChild(cp);
   if (sql) { const sb = el("button", null, svg("code", 13) + "SQL"); sb.onclick = () => copy(sql); meta.appendChild(sb); }
   ans.appendChild(meta);
