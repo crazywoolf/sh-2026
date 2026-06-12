@@ -128,6 +128,13 @@ export const METRICS: Metric[] = [
 
   // --- Юнит-экономика (unit_economics_monthly, последний месяц) ---
   {
+    id: "gmv_by_customer_segment",
+    question_ru: "GMV (оборот) по СЕГМЕНТАМ КЛИЕНТОВ (Large/Mid/SMB) — где сосредоточен оборот, что будет при уходе в крупный сегмент",
+    sql: `SELECT c.segment, round(sum(o.gmv)) AS gmv,
+                 round(100.0*sum(o.gmv)/sum(sum(o.gmv)) OVER(),1) AS pct
+          FROM orders o JOIN customers c USING(customer_id) GROUP BY 1 ORDER BY 2 DESC`,
+  },
+  {
     id: "ltv_cac_by_segment",
     question_ru: "LTV/CAC по сегментам (где привлечение убыточно)",
     sql: `SELECT segment, round(avg(ltv_12m)/avg(cac),2) AS ltv_cac
