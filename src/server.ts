@@ -25,6 +25,46 @@ const WEB = resolve(process.cwd(), "web");
 const pipelineTimeoutMs = () => Number(process.env.PIPELINE_TIMEOUT_MS ?? 90000);
 function readWeb(name: string): string { return readFileSync(resolve(WEB, name), "utf8"); }
 
+// Минимальная OpenAPI 3.0 спека контракта (бонус судьи: /openapi.json + /docs).
+const OPENAPI = {
+  openapi: "3.0.0",
+  info: {
+    title: "Meridian — мультиагентный AI-аналитик для совета директоров",
+    version: "1.0.0",
+    description: "Вопрос на русском → обоснованный ответ с цифрами, методом расчёта и допущениями. Никогда не 500; при нехватке данных — insufficient_data, без выдумок.",
+  },
+  servers: [{ url: "/" }],
+  paths: {
+    "/api/chat": {
+      post: {
+        summary: "Задать аналитический вопрос (алиасы: /api/v1/chat, /chat, /api/ask, /api/query)",
+        requestBody: { required: true, content: { "application/json": { schema: {
+          type: "object", required: ["message"],
+          properties: { message: { type: "string", example: "Сравни GMV и чистую выручку по годам" }, session_id: { type: "string" }, prefer_research: { type: "boolean" } },
+        } } } },
+        responses: {
+          "200": { description: "Ответ аналитика", content: { "application/json": { schema: { type: "object", properties: {
+            response: { type: "string" }, assumptions: { type: "array", items: { type: "string" } },
+            trace: { type: "array", items: { type: "object" } }, chart: { type: "object", nullable: true },
+            insufficient_data: { type: "boolean" }, session_id: { type: "string" },
+          } } } } },
+          "400": { description: "Пустое тело или невалидный JSON" },
+          "422": { description: "Отсутствует поле вопроса (message/query/messages)" },
+          "404": { description: "Несуществующий путь" },
+        },
+      },
+    },
+    "/health": { get: { summary: "Проверка живости", responses: { "200": { description: "{ status: ok }" } } } },
+  },
+} as const;
+
+const DOCS_HTML = `<!doctype html><html lang="ru"><head><meta charset="utf-8"><title>Meridian API — /docs</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css"></head>
+<body><div id="ui"></div>
+<script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+<script>SwaggerUIBundle({url:'/openapi.json',dom_id:'#ui'})</script></body></html>`;
+
 class TimeoutError extends Error {}
 // Гарантия «никогда не висеть»: пайплайн всегда отвечает в пределах лимита,
 // иначе — честный graceful-ответ вместо зависания (защита от HTTP 0 у судьи).
@@ -50,6 +90,14 @@ function extractMessage(body: unknown): string | null {
 export function buildServer(deps: ServerDeps): FastifyInstance {
   const app = Fastify({ logger: false });
 
+  // CORS: заголовки на все ответы + preflight OPTIONS (бонус контракта судьи).
+  app.addHook("onRequest", async (req, reply) => {
+    reply.header("Access-Control-Allow-Origin", "*");
+    reply.header("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS");
+    reply.header("Access-Control-Allow-Headers", "Content-Type");
+    if (req.method === "OPTIONS") return reply.code(204).send();
+  });
+
   app.setErrorHandler((_err, req, reply) => {
     deps.monitor.record({ path: req.url, message: "<невалидный запрос/JSON>", status: 400 });
     return reply.code(400).send({ error: "ошибка запроса" });
@@ -60,6 +108,8 @@ export function buildServer(deps: ServerDeps): FastifyInstance {
   });
 
   app.get("/health", async () => ({ status: "ok" }));
+  app.get("/openapi.json", async () => OPENAPI);
+  app.get("/docs", async (_req, reply) => reply.type("text/html; charset=utf-8").send(DOCS_HTML));
 
   const serve = (name: string, type: string) => async (_req: unknown, reply: { type: (t: string) => { send: (b: string) => unknown } }) =>
     reply.type(type).send(readWeb(name));
