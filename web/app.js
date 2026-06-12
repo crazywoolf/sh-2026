@@ -26,20 +26,20 @@ const esc = (s) => String(s ?? "").replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<"
 const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
 const scroll = () => { thread.scrollTop = thread.scrollHeight; };
 
-// --- мини-markdown ---
+// --- мини-markdown: абзацы по пустым строкам, **жирный**, `код`, списки ---
 function md(text) {
-  let h = esc(text).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
-  const lines = h.split(/\n/);
-  const out = []; let list = null;
-  const close = () => { if (list) { out.push(list === "ul" ? "</ul>" : "</ol>"); list = null; } };
-  for (const ln of lines) {
-    const t = ln.trim();
-    const ul = t.match(/^[-•]\s+(.*)/), ol = t.match(/^\d+[.)]\s+(.*)/);
-    if (ul) { if (list !== "ul") { close(); out.push("<ul>"); list = "ul"; } out.push("<li>" + ul[1] + "</li>"); }
-    else if (ol) { if (list !== "ol") { close(); out.push("<ol>"); list = "ol"; } out.push("<li>" + ol[1] + "</li>"); }
-    else { close(); if (t) out.push("<p>" + t + "</p>"); }
+  const inline = (s) => esc(s).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+?)\*\*/g, "<strong>$1</strong>");
+  const blocks = String(text).replace(/\r/g, "").split(/\n{2,}/);
+  const out = [];
+  for (const blk of blocks) {
+    const lines = blk.split(/\n/).map((l) => l.trim()).filter(Boolean);
+    if (!lines.length) continue;
+    if (lines.every((l) => /^[-•]\s+/.test(l)))
+      out.push("<ul>" + lines.map((l) => "<li>" + inline(l.replace(/^[-•]\s+/, "")) + "</li>").join("") + "</ul>");
+    else if (lines.every((l) => /^\d+[.)]\s+/.test(l)))
+      out.push("<ol>" + lines.map((l) => "<li>" + inline(l.replace(/^\d+[.)]\s+/, "")) + "</li>").join("") + "</ol>");
+    else out.push("<p>" + lines.map(inline).join("<br>") + "</p>");
   }
-  close();
   return out.join("");
 }
 
@@ -102,7 +102,7 @@ function botAnswer(node, r) {
 
   // декомпозиция research
   if (isResearch && r.plan.sub_questions && r.plan.sub_questions.length > 1) {
-    const box = el("div", "research", "<b>Мини-исследование</b> — система разложила вопрос на " + r.plan.sub_questions.length + " направлений:");
+    const box = el("div", "research", "<b>Мини-исследование</b> — система разложила вопрос по " + r.plan.sub_questions.length + " направлениям:");
     r.plan.sub_questions.forEach((s, i) => box.appendChild(el("div", "subq", (i + 1) + ". " + esc(s))));
     ans.appendChild(box);
   }

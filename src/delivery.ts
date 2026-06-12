@@ -28,6 +28,11 @@ function clip(s: string, n: number): string {
   return cut.replace(/\s+\S*$/, "") + "…";
 }
 
+// markdown → Telegram HTML: экранируем, **жирный** → <b>, чистим стрелые маркеры.
+function mdToTg(s: string): string {
+  return escapeHtml(s).replace(/\*\*([^*]+?)\*\*/g, "<b>$1</b>").replace(/\*\*/g, "");
+}
+
 function compactNum(v: number): string {
   const a = Math.abs(v);
   if (a >= 1e9) return (v / 1e9).toFixed(2) + " млрд";
@@ -67,7 +72,7 @@ export function reportToText(r: Report): string {
   for (const i of r.items) {
     const mark = i.insufficient_data ? "❔" : i.alert ? "⚠️" : "✅";
     lines.push(`${mark} <b>${escapeHtml(i.title)}</b>`);
-    lines.push(escapeHtml(clip(i.response, 240)));
+    lines.push(mdToTg(clip(i.response, 280)));
     if (i.chart) {
       const bars = chartToAscii(i.chart);
       if (bars) lines.push(bars);
