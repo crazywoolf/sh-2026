@@ -71,6 +71,9 @@ export function buildServer(deps: ServerDeps): FastifyInstance {
   // Страница отправленных автоотчётов
   app.get("/reports", serve("reports.html", "text/html; charset=utf-8") as never);
 
+  // Демо-лендинг решения
+  app.get("/demo", serve("demo.html", "text/html; charset=utf-8") as never);
+
   // Расписания автоотчётов (CRUD)
   type R = { code: (n: number) => { send: (b: unknown) => unknown } };
   app.get("/api/schedules", async () => deps.schedules.list());

@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Meridian — демо решения</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <style>
+    :root{
+      --brand:#5d56c4; --brand-2:#7b74e0; --ink:#1b1d22; --mut:#6c6f76;
+      --line:#e6e7ea; --bg:#f5f5f8; --card:#fff; --ok:#1a7f37; --warn:#b7791f; --danger:#d6453d;
+      --shadow:0 10px 30px rgba(30,28,70,.08);
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;font-family:-apple-system,"Segoe UI",Inter,Arial,sans-serif;color:var(--ink);background:var(--bg);
+      scroll-snap-type:y proximity}
+    a{color:inherit}
+    /* top bar */
+    .top{position:fixed;top:0;left:0;right:0;z-index:30;display:flex;align-items:center;gap:12px;
+      padding:12px 22px;background:rgba(255,255,255,.82);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:700}
+    .brand .mark{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;color:#fff;font-weight:800;
+      background:linear-gradient(135deg,var(--brand),var(--brand-2))}
+    .brand small{display:block;font-weight:500;color:var(--mut);font-size:11px;margin-top:-1px}
+    .top .sp{flex:1}
+    .tlink{font-size:13px;color:var(--mut);text-decoration:none;padding:7px 12px;border-radius:8px;border:1px solid transparent}
+    .tlink:hover{background:#f0f0f5;color:var(--ink)}
+    .tlink.primary{background:var(--brand);color:#fff;border-color:var(--brand)}
+    .tlink.primary:hover{background:#4d47ad;color:#fff}
+    /* dot nav */
+    .dots{position:fixed;right:18px;top:50%;transform:translateY(-50%);z-index:30;display:flex;flex-direction:column;gap:12px}
+    .dots a{width:10px;height:10px;border-radius:50%;background:#cdcdd6;transition:.2s;position:relative}
+    .dots a:hover,.dots a.on{background:var(--brand);transform:scale(1.25)}
+    .dots a span{position:absolute;right:18px;top:50%;transform:translateY(-50%);white-space:nowrap;font-size:12px;
+      color:var(--mut);opacity:0;pointer-events:none;transition:.2s;background:#fff;padding:2px 8px;border-radius:6px;box-shadow:var(--shadow)}
+    .dots a:hover span{opacity:1}
+    /* slide shell */
+    .slide{min-height:100vh;scroll-snap-align:start;display:flex;flex-direction:column;justify-content:center;
+      padding:96px 28px 64px;max-width:1080px;margin:0 auto}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.08em;
+      text-transform:uppercase;color:var(--brand);margin-bottom:14px}
+    .eyebrow .n{display:grid;place-items:center;width:22px;height:22px;border-radius:6px;background:#ece9fb;font-size:12px}
+    h2.title{font-size:34px;line-height:1.15;margin:0 0 10px;letter-spacing:-.02em}
+    .lead{font-size:16px;color:var(--mut);max-width:680px;margin:0 0 26px;line-height:1.5}
+    /* hero */
+    .hero{align-items:flex-start}
+    .hero h1{font-size:54px;line-height:1.05;letter-spacing:-.03em;margin:0 0 16px;max-width:880px}
+    .hero h1 .g{background:linear-gradient(120deg,var(--brand),var(--brand-2));-webkit-background-clip:text;background-clip:text;color:transparent}
+    .hero p{font-size:18px;color:var(--mut);max-width:640px;line-height:1.5;margin:0 0 30px}
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;width:100%;margin-top:8px}
+    .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+    .stat b{display:block;font-size:30px;letter-spacing:-.02em}
+    .stat span{font-size:13px;color:var(--mut)}
+    .cta{display:flex;gap:12px;margin-bottom:34px;flex-wrap:wrap}
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:12px 20px;border-radius:11px;font-size:15px;
+      font-weight:600;text-decoration:none;border:1px solid var(--line);background:#fff;transition:.15s}
+    .btn:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
+    .btn.primary{background:var(--brand);color:#fff;border-color:var(--brand)}
+    /* architecture flow */
+    .flow{display:flex;align-items:stretch;gap:14px;flex-wrap:wrap}
+    .node{flex:1;min-width:150px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;
+      box-shadow:var(--shadow);position:relative}
+    .node .ico{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;margin-bottom:10px;
+      background:#ece9fb;color:var(--brand)}
+    .node h4{margin:0 0 4px;font-size:15px}
+    .node p{margin:0;font-size:12.5px;color:var(--mut);line-height:1.45}
+    .arrow{align-self:center;color:#c4c4d0;flex:0 0 auto}
+    .loop-wrap{display:flex;align-items:stretch;gap:14px;flex:2.1;min-width:320px;border:1.5px dashed #cfc9f0;
+      border-radius:16px;padding:12px;background:#faf9ff;position:relative}
+    .loop-wrap::after{content:"петля проверки ≤2";position:absolute;top:-9px;left:14px;background:#faf9ff;padding:0 8px;
+      font-size:11px;color:var(--brand);font-weight:700}
+    .orch{display:flex;align-items:center;gap:10px;margin-top:16px;font-size:13px;color:var(--mut);
+      background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 16px;box-shadow:var(--shadow)}
+    .orch b{color:var(--ink)}
+    .chips{display:flex;flex-wrap:wrap;gap:9px;margin-top:18px}
+    .chip{font-size:12.5px;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:999px;padding:7px 13px;
+      display:inline-flex;align-items:center;gap:7px}
+    .chip svg{color:var(--brand)}
+    /* transcript stepper */
+    .steps{display:flex;flex-direction:column;gap:0;position:relative}
+    .step{display:grid;grid-template-columns:48px 1fr;gap:16px;padding-bottom:22px;position:relative}
+    .step:not(:last-child)::before{content:"";position:absolute;left:23px;top:46px;bottom:-2px;width:2px;background:var(--line)}
+    .bub{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;color:#fff;font-weight:700;z-index:1;
+      background:linear-gradient(135deg,var(--brand),var(--brand-2));box-shadow:var(--shadow)}
+    .scard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow)}
+    .scard .role{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+    .scard .role b{font-size:15px}
+    .tag{font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;background:#ece9fb;color:var(--brand)}
+    .tag.ok{background:#e4f5ea;color:var(--ok)}
+    .tag.warn{background:#fbf0db;color:var(--warn)}
+    .scard p{margin:6px 0;font-size:14px;line-height:1.55;color:#33363c}
+    .scard p.mut{color:var(--mut);font-size:13px}
+    pre.code{margin:8px 0 0;background:#1c1b29;color:#e9e8f5;border-radius:10px;padding:12px 14px;overflow:auto;
+      font:12.5px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace}
+    pre.code .kw{color:#b9a6ff}.pre .num{color:#8ad6a4}
+    .rows{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .pill{font:12.5px ui-monospace,Menlo,monospace;background:#f2f1fb;border:1px solid #e2dffa;border-radius:8px;padding:5px 10px}
+    .pill b{color:var(--brand)}
+    .checks{display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;margin-top:6px}
+    .ck{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--mut)}
+    .ck svg{color:var(--ok);flex:0 0 auto}
+    .answer{border-left:3px solid var(--brand);padding-left:14px}
+    .answer b{color:var(--ink)}
+    .chartbox{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow);
+      margin-top:4px;max-width:460px;height:230px}
+    .verdict{display:inline-flex;align-items:center;gap:8px;background:#e4f5ea;color:var(--ok);font-weight:700;
+      padding:8px 14px;border-radius:10px;font-size:14px}
+    .foot{text-align:center;color:var(--mut);font-size:13px;padding:30px}
+    @media (max-width:720px){
+      .top{padding:10px 14px;gap:8px}
+      .brand small{display:none}
+      .tlink:not(.primary){display:none}
+      .tlink.primary{padding:8px 12px;font-size:13px}
+      .slide{padding:84px 16px 48px}
+      .hero h1{font-size:36px}.hero p{font-size:16px}
+      h2.title{font-size:26px}
+      .stats{grid-template-columns:repeat(2,1fr)}
+      .dots{display:none}
+      .flow{flex-direction:column}.arrow{transform:rotate(90deg);align-self:center}
+      .loop-wrap{flex-direction:column}
+      .checks{grid-template-columns:1fr}
+      .step{grid-template-columns:38px 1fr;gap:12px}.bub{width:36px;height:36px}
+      .step:not(:last-child)::before{left:18px;top:40px}
+    }
+  </style>
+</head>
+<body>
+  <div class="top">
+    <a class="brand" href="/" style="text-decoration:none">
+      <div class="mark">M</div>
+      <div>Meridian<small>демо решения · AI South Hub 2026</small></div>
+    </a>
+    <div class="sp"></div>
+    <a class="tlink" href="/monitor">Мониторинг</a>
+    <a class="tlink" href="/reports">Отчёты</a>
+    <a class="tlink primary" href="/">Открыть чат →</a>
+  </div>
+
+  <nav class="dots">
+    <a href="#hero" class="on"><span>Обзор</span></a>
+    <a href="#arch"><span>Архитектура</span></a>
+    <a href="#trace"><span>Транскрипт</span></a>
+  </nav>
+
+  <!-- HERO -->
+  <section class="slide hero" id="hero">
+    <div class="eyebrow">Мультиагентный AI-аналитик</div>
+    <h1>Вопрос совета директоров на русском —<br><span class="g">обоснованный ответ с цифрами и методом.</span></h1>
+    <p>Meridian заменяет 5–10 дней ожидания тикета аналитики на ответ за минуты. Пять агентов: интерпретация → SQL → бизнес-вывод → критика галлюцинаций → график. Честно говорит «данных недостаточно» вместо выдумок.</p>
+    <div class="cta">
+      <a class="btn primary" href="/">Задать вопрос системе</a>
+      <a class="btn" href="#arch">Как это устроено ↓</a>
+    </div>
+    <div class="stats">
+      <div class="stat"><b>5</b><span>агентов в конвейере</span></div>
+      <div class="stat"><b>24</b><span>метрики в библиотеке</span></div>
+      <div class="stat"><b>0</b><span>ответов 500 · 0/13 stress</span></div>
+      <div class="stat"><b>3</b><span>режима: чат · ресёрч · отчёты</span></div>
+    </div>
+  </section>
+
+  <!-- ARCHITECTURE -->
+  <section class="slide" id="arch">
+    <div class="eyebrow"><span class="n">1</span> Слайд · Архитектура</div>
+    <h2 class="title">Пять агентов под управлением оркестратора</h2>
+    <p class="lead">Каждый агент — отдельная ответственность и отдельный промпт. Critic — ключевой компонент оценки: ловит галлюцинации и подмены, возвращая работу назад до 2 раз.</p>
+
+    <div class="flow">
+      <div class="node">
+        <div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></div>
+        <h4>Planner</h4>
+        <p>Классифицирует режим (чат / ресёрч), декомпозирует сложный вопрос на под-вопросы.</p>
+      </div>
+      <svg class="arrow" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+
+      <div class="loop-wrap">
+        <div class="node">
+          <div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg></div>
+          <h4>Extractor</h4>
+          <p>Вопрос → схема → SQL на DuckDB (read-only). Определяет нехватку данных.</p>
+        </div>
+        <svg class="arrow" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        <div class="node">
+          <div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18M7 14l3-4 4 3 5-7"/></svg></div>
+          <h4>Analyst</h4>
+          <p>Цифры → выводы на языке бизнеса: паттерны, аномалии, компромиссы.</p>
+        </div>
+        <svg class="arrow" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        <div class="node">
+          <div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg></div>
+          <h4>Critic</h4>
+          <p>Чек-лист ловушек: ложный отказ, смешение таблиц, усреднение разнородного, сверка чисел.</p>
+        </div>
+      </div>
+      <svg class="arrow" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+
+      <div class="node">
+        <div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18M7 16v-5M12 16V8M17 16v-3"/></svg></div>
+        <h4>Visualization</h4>
+        <p>Подбирает тип графика под задачу: динамика, сравнение, аномалии, структура.</p>
+      </div>
+    </div>
+
+    <div class="orch">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l3 3M16 16l3 3M19 5l-3 3M8 16l-3 3"/></svg>
+      <span><b>Оркестратор</b> держит контекст диалога, в режиме ресёрча гоняет под-вопросы <b>параллельно</b> и синтезирует ответ. Гарантия: никогда не 500, при нехватке данных — <b>insufficient_data: true</b>.</span>
+    </div>
+
+    <div class="chips">
+      <span class="chip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg> DuckDB read-only + guard-rails</span>
+      <span class="chip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg> 24 проверенные метрики</span>
+      <span class="chip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg> Честность по умолчанию</span>
+      <span class="chip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg> YandexGPT 5.1 · Yandex Cloud</span>
+      <span class="chip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg> OpenAPI · CORS · /health</span>
+    </div>
+  </section>
+
+  <!-- TRANSCRIPT -->
+  <section class="slide" id="trace">
+    <div class="eyebrow"><span class="n">2</span> Слайд · Транскрипт</div>
+    <h2 class="title">Как система пришла к ответу</h2>
+    <p class="lead">Реальный прогон на тест-кейсе: <b>«Какое отношение LTV/CAC по сегментам? Где привлечение убыточно?»</b> — видно каждый шаг конвейера.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="bub">1</div>
+        <div class="scard">
+          <div class="role"><b>Planner</b><span class="tag">режим: bi</span></div>
+          <p class="mut">Данные доступны в таблице <code>unit_economics_monthly</code> — отвечаем одним срезом, без декомпозиции.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="bub">2</div>
+        <div class="scard">
+          <div class="role"><b>Extractor</b><span class="tag">метрика ltv_cac_by_segment</span><span class="tag ok">3 строки</span></div>
+          <p class="mut">Сгенерирован и исполнен SQL на DuckDB (read-only):</p>
+          <pre class="code"><span class="kw">SELECT</span> segment, round(avg(ltv_12m)/avg(cac),2) <span class="kw">AS</span> ltv_cac
+<span class="kw">FROM</span> unit_economics_monthly
+<span class="kw">WHERE</span> month=<span style="color:#f0a868">'2025-12-01'</span> <span class="kw">GROUP BY</span> 1 <span class="kw">ORDER BY</span> 2 <span class="kw">DESC</span></pre>
+          <div class="rows">
+            <span class="pill">Large <b>3.03</b></span>
+            <span class="pill">Mid <b>1.68</b></span>
+            <span class="pill">SMB <b>0.59</b></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="bub">3</div>
+        <div class="scard">
+          <div class="role"><b>Analyst</b><span class="tag ok">confidence: high</span></div>
+          <div class="answer">
+            <p><b>Сегмент SMB демонстрирует убыточное привлечение, тогда как Large и Mid — прибыльны.</b></p>
+            <p>Large окупает привлечение втрое (LTV/CAC = <b>3.03</b>), Mid — в полтора раза (<b>1.68</b>). В SMB на каждый вложенный рубль возвращается лишь <b>59 копеек</b> — привлечение убыточно.</p>
+            <p>⚠️ Нужно пересмотреть стратегию привлечения в SMB: поднять цену, удлинить удержание или сократить CAC канала.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="bub">4</div>
+        <div class="scard">
+          <div class="role"><b>Critic</b><span class="verdict"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg> approved</span></div>
+          <p class="mut">8 проверок пройдено, замечаний нет:</p>
+          <div class="checks">
+            <div class="ck"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg> Нет ложного отказа</div>
+            <div class="ck"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg> Числа сверены со строками</div>
+            <div class="ck"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg> Нет смешения orders/financials</div>
+            <div class="ck"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg> Усреднение по однородным группам</div>
+            <div class="ck"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg> Есть стратегический смысл</div>
+            <div class="ck"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg> Трактовка вопроса корректна</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="bub">5</div>
+        <div class="scard">
+          <div class="role"><b>Visualization</b><span class="tag">chart: bar</span></div>
+          <p class="mut">Сравнение категорий → столбчатая диаграмма (x: segment, y: ltv_cac). Красным выделен убыточный сегмент.</p>
+          <div class="chartbox"><canvas id="demoChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="foot">Демо-лендинг будет дополняться слайдами: режимы работы · робастность · деплой. © Meridian / AI South Hub 2026</div>
+
+  <script>
+    // активная точка навигации
+    const dots=[...document.querySelectorAll('.dots a')];
+    const secs=['hero','arch','trace'].map(id=>document.getElementById(id));
+    const io=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){
+      dots.forEach(d=>d.classList.toggle('on',d.getAttribute('href')==='#'+e.target.id));}});},{threshold:.5});
+    secs.forEach(s=>io.observe(s));
+
+    // график LTV/CAC — пунктир порога безубыточности (=1) рисуем своим плагином
+    const thresh={id:'thr',afterDatasetsDraw(c){const{ctx,chartArea:a,scales:{y}}=c;const yy=y.getPixelForValue(1);
+      ctx.save();ctx.strokeStyle='#b7791f';ctx.setLineDash([5,4]);ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.moveTo(a.left,yy);ctx.lineTo(a.right,yy);ctx.stroke();
+      ctx.fillStyle='#b7791f';ctx.font='10px sans-serif';ctx.fillText('безубыточность = 1',a.left+6,yy-5);ctx.restore();}};
+    new Chart(document.getElementById('demoChart'),{type:'bar',plugins:[thresh],
+      data:{labels:['Large','Mid','SMB'],
+        datasets:[{data:[3.03,1.68,0.59],backgroundColor:['#5d56c4','#7b74e0','#d6453d'],borderRadius:7,barThickness:46}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:c=>'LTV/CAC = '+c.parsed.y}}},
+        scales:{y:{beginAtZero:true,grid:{color:'#eee'},ticks:{font:{size:11}}},
+          x:{grid:{display:false},ticks:{font:{size:12,weight:'600'}}}}}});
+  </script>
+</body>
+</html>
