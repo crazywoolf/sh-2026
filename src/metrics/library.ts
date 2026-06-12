@@ -98,6 +98,15 @@ export const METRICS: Metric[] = [
           FROM churn_reasons`,
   },
   {
+    id: "churn_formal_vs_economic_yearly",
+    question_ru: "Отток по годам: формальный (число ушедших с датой ухода) ПРОТИВ экономического (доля спящих) — действительно ли база стала стабильнее / правда ли отток упал",
+    sql: `SELECT year, formal_churned, dormant_pct FROM
+            (SELECT year(churn_date) AS year, count(*) AS formal_churned FROM customers WHERE churn_date IS NOT NULL GROUP BY 1) f
+            FULL JOIN
+            (SELECT year(month) AS year, round(100.0*count(*) FILTER(WHERE status='dormant')/count(*),1) AS dormant_pct FROM customer_activity_monthly GROUP BY 1) d USING(year)
+          ORDER BY year`,
+  },
+  {
     id: "economic_churn_dormant",
     question_ru: "Экономический отток: динамика доли спящих (dormant) клиентов по годам — кто на балансе, но перестал заказывать (vs формальный отток)",
     sql: `SELECT year(month) AS year,
