@@ -313,20 +313,26 @@ document.getElementById("side-toggle").onclick = () => document.body.classList.t
 document.getElementById("sidebar-scrim").onclick = closeSidebar;
 
 chats = loadChats();
-const savedActive = (() => { try { return localStorage.getItem(LS_KEY + "_active"); } catch { return null; } })();
-if (savedActive && chats.some((c) => c.id === savedActive)) {
-  activeId = savedActive; sessionId = savedActive;
-  renderChat(activeChat());     // восстановить последний чат + подсветить его
-} else {
-  activeId = sessionId;          // свежий пустой чат → экран приветствия
-  renderSuggestions();
-}
-renderSidebar();
-updateSend();
-
-// авто-запуск вопроса из ссылки (?q=…) — клик по колонке-гипотезе на /demo
+// авто-запуск вопроса из ссылки (?q=…) — клик по карточке на /demo: ВСЕГДА новый чат
 const _qParam = new URLSearchParams(location.search).get("q");
-if (_qParam) { history.replaceState({}, "", location.pathname); sendText(_qParam); }
+if (_qParam) {
+  history.replaceState({}, "", location.pathname);
+  activeId = sessionId;          // свежий чат (sessionId — новый), восстановление пропускаем
+  renderSidebar();
+  updateSend();
+  sendText(_qParam);             // создаёт новый чат и отправляет вопрос
+} else {
+  const savedActive = (() => { try { return localStorage.getItem(LS_KEY + "_active"); } catch { return null; } })();
+  if (savedActive && chats.some((c) => c.id === savedActive)) {
+    activeId = savedActive; sessionId = savedActive;
+    renderChat(activeChat());     // восстановить последний чат + подсветить его
+  } else {
+    activeId = sessionId;          // свежий пустой чат → экран приветствия
+    renderSuggestions();
+  }
+  renderSidebar();
+  updateSend();
+}
 
 // --- Дровер автоотчётов ---
 const DEMO_CRON = "*/5 * * * *";
