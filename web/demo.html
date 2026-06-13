@@ -52,28 +52,32 @@
     .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
     .stat b{display:block;font-size:30px;letter-spacing:-.02em}
     .stat span{font-size:13px;color:var(--mut)}
-    .cta{display:flex;gap:12px;margin-bottom:34px;flex-wrap:wrap;align-items:center}
-    .qr{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 14px 8px 10px;box-shadow:var(--shadow);margin-left:auto}
-    .qr svg{width:104px;height:104px;display:block}
-    .qr div{display:flex;flex-direction:column;line-height:1.25}
-    .qr b{font-size:13px;color:var(--ink)}
-    .qr span{font-size:11px;color:var(--mut)}
-    @media (max-width:720px){ .qr{margin-left:0} }
+    .cta{display:flex;gap:12px;margin-bottom:30px;flex-wrap:wrap;align-items:center}
+    .hero-top{display:grid;grid-template-columns:1.15fr .85fr;gap:48px;align-items:center;width:100%}
+    .hero-main{min-width:0}
+    .hero .stats{grid-template-columns:repeat(2,1fr)}
+    .hero-qr{display:flex;flex-direction:column;align-items:center;gap:18px;background:#fff;border:1px solid var(--line);
+      border-radius:20px;padding:32px;box-shadow:var(--shadow)}
+    .hero-qr svg{width:100%;max-width:340px;height:auto;display:block}
+    .hero-qr .qr-cap{text-align:center}
+    .hero-qr .qr-cap b{display:block;font-size:17px;color:var(--ink)}
+    .hero-qr .qr-cap span{font-size:13px;color:var(--mut);font-family:ui-monospace,Menlo,monospace}
+    @media (max-width:860px){ .hero-top{grid-template-columns:1fr} .hero-qr{display:none} }
     .btn{display:inline-flex;align-items:center;gap:8px;padding:12px 20px;border-radius:11px;font-size:15px;
       font-weight:600;text-decoration:none;border:1px solid var(--line);background:#fff;transition:.15s}
     .btn:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
     .btn.primary{background:var(--brand);color:#fff;border-color:var(--brand)}
     /* architecture flow */
-    .flow{display:flex;align-items:stretch;gap:14px;flex-wrap:wrap}
-    .node{flex:1;min-width:150px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;
+    .flow{display:flex;flex-direction:column;align-items:center;gap:10px;max-width:600px;margin:0 auto;width:100%}
+    .node{width:100%;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;
       box-shadow:var(--shadow);position:relative}
     .node .ico{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;margin-bottom:10px;
       background:#ece9fb;color:var(--brand)}
     .node h4{margin:0 0 4px;font-size:15px}
     .node p{margin:0;font-size:12.5px;color:var(--mut);line-height:1.45}
-    .arrow{align-self:center;color:#c4c4d0;flex:0 0 auto}
-    .loop-wrap{display:flex;align-items:stretch;gap:14px;flex:2.1;min-width:320px;border:1.5px dashed #cfc9f0;
-      border-radius:16px;padding:12px;background:#faf9ff;position:relative}
+    .arrow{align-self:center;color:#c4c4d0;flex:0 0 auto;transform:rotate(90deg)}
+    .loop-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;border:1.5px dashed #cfc9f0;
+      border-radius:16px;padding:22px 14px 14px;background:#faf9ff;position:relative}
     .loop-wrap::after{content:"петля проверки ≤2";position:absolute;top:-9px;left:14px;background:#faf9ff;padding:0 8px;
       font-size:11px;color:var(--brand);font-weight:700}
     .orch{display:flex;align-items:center;gap:10px;margin-top:16px;font-size:13px;color:var(--mut);
@@ -84,6 +88,12 @@
     .dec{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:var(--shadow)}
     .dec b{display:block;font-size:13.5px;margin-bottom:3px;color:var(--ink)}
     .dec span{font-size:12.5px;color:var(--mut);line-height:1.45}
+    .quotes{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .quote{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px 22px 20px 44px;box-shadow:var(--shadow);position:relative;font-size:17px;line-height:1.5;color:var(--ink)}
+    .quote::before{content:"«";color:var(--brand);font-size:46px;font-weight:800;position:absolute;top:14px;left:14px;opacity:.3}
+    .thanks{font-size:18px;line-height:2;color:var(--ink);max-width:760px}
+    .thanks b{color:var(--ink)} .thanks .t{color:var(--mut)}
+    @media (max-width:720px){ .quotes{grid-template-columns:1fr} }
     .princ-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
     .princ{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow);border-top:3px solid var(--brand);display:flex;flex-direction:column}
     .princ b{display:block;font-size:15px;margin-bottom:6px;color:var(--ink)}
@@ -247,26 +257,32 @@
     <a href="#modes"><span>Три режима</span></a>
     <a href="#robust"><span>Робастность</span></a>
     <a href="#deploy"><span>Деплой и стек</span></a>
+    <a href="#reflect"><span>Рефлексия</span></a>
+    <a href="#thanks"><span>Спасибо</span></a>
   </nav>
 
   <!-- HERO -->
   <section class="slide hero" id="hero">
-    <div class="eyebrow">Meridian · AI-аналитик для совета директоров</div>
-    <h1>Ответ на бизнес-вопрос —<br><span class="g">за минуты, с цифрами и методом.</span></h1>
-    <p>Совет спрашивает на обычном языке — Meridian отвечает обоснованно: <b>цифры, метод расчёта, допущения</b>. И честно говорит «данных недостаточно» вместо выдумок. Было — тикет аналитикам на 5–10 дней; стало — ответ за минуты.</p>
-    <div class="cta">
-      <a class="btn primary" href="/">Задать вопрос системе</a>
-      <a class="btn" href="#problem">С чего всё началось ↓</a>
-      <div class="qr">
-        <svg viewBox="0 0 37 37" shape-rendering="crispEdges" aria-label="QR на чат"><path fill="#fff" d="M0 0h37v37H0z"/><path stroke="#000" d="M4 4.5h7m1 0h2m2 0h4m3 0h2m1 0h7M4 5.5h1m5 0h1m1 0h1m1 0h4m2 0h3m3 0h1m5 0h1M4 6.5h1m1 0h3m1 0h1m2 0h3m4 0h1m2 0h2m1 0h1m1 0h3m1 0h1M4 7.5h1m1 0h3m1 0h1m1 0h1m1 0h1m3 0h2m1 0h1m2 0h1m1 0h1m1 0h3m1 0h1M4 8.5h1m1 0h3m1 0h1m2 0h1m2 0h1m1 0h1m1 0h1m2 0h1m2 0h1m1 0h3m1 0h1M4 9.5h1m5 0h1m2 0h1m2 0h2m1 0h2m2 0h2m1 0h1m5 0h1M4 10.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M12 11.5h1m6 0h3m1 0h1M4 12.5h1m1 0h2m1 0h3m1 0h1m1 0h1m1 0h1m1 0h2m3 0h1m2 0h1m1 0h2M7 13.5h2m5 0h6m1 0h6m1 0h1m3 0h1M4 14.5h1m1 0h6m2 0h1m2 0h1m2 0h2m3 0h2m3 0h2M5 15.5h2m2 0h1m3 0h1m1 0h2m3 0h1m4 0h4m3 0h1M6 16.5h1m1 0h1m1 0h4m1 0h1m2 0h2m1 0h1m2 0h2m3 0h2M4 17.5h4m1 0h1m2 0h1m1 0h3m1 0h1m1 0h2m1 0h1m1 0h2m3 0h3M6 18.5h1m2 0h2m1 0h1m2 0h1m1 0h1m1 0h2m2 0h2m1 0h2m2 0h3M4 19.5h1m1 0h2m1 0h1m5 0h2m1 0h1m1 0h1m4 0h1m2 0h1m2 0h1M7 20.5h5m2 0h1m1 0h1m1 0h2m2 0h3m2 0h3m1 0h1M7 21.5h1m1 0h1m1 0h2m3 0h1m1 0h1m1 0h1m3 0h2m1 0h1m1 0h3M4 22.5h1m3 0h1m1 0h5m1 0h7m1 0h2m1 0h2m1 0h1M7 23.5h1m3 0h2m2 0h1m1 0h6m1 0h1m5 0h1M5 24.5h3m2 0h2m1 0h18M12 25.5h2m1 0h2m4 0h2m1 0h1m3 0h5M4 26.5h7m1 0h3m1 0h1m1 0h1m1 0h1m2 0h2m1 0h1m1 0h2m1 0h1M4 27.5h1m5 0h1m1 0h7m3 0h1m1 0h1m3 0h2m2 0h1M4 28.5h1m1 0h3m1 0h1m3 0h1m1 0h1m2 0h4m1 0h5m1 0h2M4 29.5h1m1 0h3m1 0h1m1 0h1m1 0h2m1 0h1m1 0h2m6 0h3m2 0h1M4 30.5h1m1 0h3m1 0h1m1 0h2m2 0h1m3 0h3m1 0h2m1 0h1m2 0h1m1 0h1M4 31.5h1m5 0h1m2 0h5m4 0h1m1 0h1m3 0h2m1 0h1M4 32.5h7m1 0h1m3 0h1m3 0h1m1 0h1m1 0h1m4 0h1m1 0h1"/></svg>
-        <div><b>Сканируйте →</b><span>откроется живой чат</span></div>
+    <div class="hero-top">
+      <div class="hero-main">
+        <div class="eyebrow">Meridian · AI-аналитик для совета директоров</div>
+        <h1>Ответ на бизнес-вопрос —<br><span class="g">за минуты, с цифрами и методом.</span></h1>
+        <p>Совет спрашивает на обычном языке — Meridian отвечает обоснованно: <b>цифры, метод расчёта, допущения</b>. И честно говорит «данных недостаточно» вместо выдумок. Было — тикет аналитикам на 5–10 дней; стало — ответ за минуты.</p>
+        <div class="cta">
+          <a class="btn primary" href="/">Задать вопрос системе</a>
+          <a class="btn" href="#problem">С чего всё началось ↓</a>
+        </div>
+        <div class="stats">
+          <div class="stat"><b>5</b><span>агентов в конвейере</span></div>
+          <div class="stat"><b>35</b><span>метрик в библиотеке</span></div>
+          <div class="stat"><b>0</b><span>ответов 500 · 0/13 stress</span></div>
+          <div class="stat"><b>3</b><span>режима: чат · ресёрч · отчёты</span></div>
+        </div>
       </div>
-    </div>
-    <div class="stats">
-      <div class="stat"><b>5</b><span>агентов в конвейере</span></div>
-      <div class="stat"><b>35</b><span>метрик в библиотеке</span></div>
-      <div class="stat"><b>0</b><span>ответов 500 · 0/13 stress</span></div>
-      <div class="stat"><b>3</b><span>режима: чат · ресёрч · отчёты</span></div>
+      <aside class="hero-qr">
+        <svg viewBox="0 0 37 37" shape-rendering="crispEdges" aria-label="QR-код на живой чат Meridian"><path fill="#fff" d="M0 0h37v37H0z"/><path stroke="#000" d="M4 4.5h7m1 0h2m2 0h4m3 0h2m1 0h7M4 5.5h1m5 0h1m1 0h1m1 0h4m2 0h3m3 0h1m5 0h1M4 6.5h1m1 0h3m1 0h1m2 0h3m4 0h1m2 0h2m1 0h1m1 0h3m1 0h1M4 7.5h1m1 0h3m1 0h1m1 0h1m1 0h1m3 0h2m1 0h1m2 0h1m1 0h1m1 0h3m1 0h1M4 8.5h1m1 0h3m1 0h1m2 0h1m2 0h1m1 0h1m1 0h1m2 0h1m2 0h1m1 0h3m1 0h1M4 9.5h1m5 0h1m2 0h1m2 0h2m1 0h2m2 0h2m1 0h1m5 0h1M4 10.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M12 11.5h1m6 0h3m1 0h1M4 12.5h1m1 0h2m1 0h3m1 0h1m1 0h1m1 0h1m1 0h2m3 0h1m2 0h1m1 0h2M7 13.5h2m5 0h6m1 0h6m1 0h1m3 0h1M4 14.5h1m1 0h6m2 0h1m2 0h1m2 0h2m3 0h2m3 0h2M5 15.5h2m2 0h1m3 0h1m1 0h2m3 0h1m4 0h4m3 0h1M6 16.5h1m1 0h1m1 0h4m1 0h1m2 0h2m1 0h1m2 0h2m3 0h2M4 17.5h4m1 0h1m2 0h1m1 0h3m1 0h1m1 0h2m1 0h1m1 0h2m3 0h3M6 18.5h1m2 0h2m1 0h1m2 0h1m1 0h1m1 0h2m2 0h2m1 0h2m2 0h3M4 19.5h1m1 0h2m1 0h1m5 0h2m1 0h1m1 0h1m4 0h1m2 0h1m2 0h1M7 20.5h5m2 0h1m1 0h1m1 0h2m2 0h3m2 0h3m1 0h1M7 21.5h1m1 0h1m1 0h2m3 0h1m1 0h1m1 0h1m3 0h2m1 0h1m1 0h3M4 22.5h1m3 0h1m1 0h5m1 0h7m1 0h2m1 0h2m1 0h1M7 23.5h1m3 0h2m2 0h1m1 0h6m1 0h1m5 0h1M5 24.5h3m2 0h2m1 0h18M12 25.5h2m1 0h2m4 0h2m1 0h1m3 0h5M4 26.5h7m1 0h3m1 0h1m1 0h1m1 0h1m2 0h2m1 0h1m1 0h2m1 0h1M4 27.5h1m5 0h1m1 0h7m3 0h1m1 0h1m3 0h2m2 0h1M4 28.5h1m1 0h3m1 0h1m3 0h1m1 0h1m2 0h4m1 0h5m1 0h2M4 29.5h1m1 0h3m1 0h1m1 0h1m1 0h2m1 0h1m1 0h2m6 0h3m2 0h1M4 30.5h1m1 0h3m1 0h1m1 0h2m2 0h1m3 0h3m1 0h2m1 0h1m2 0h1m1 0h1M4 31.5h1m5 0h1m2 0h5m4 0h1m1 0h1m3 0h2m1 0h1M4 32.5h7m1 0h1m3 0h1m3 0h1m1 0h1m1 0h1m4 0h1m1 0h1"/></svg>
+        <div class="qr-cap"><b>Отсканируйте — откроется живой чат</b><span>team-004.aisouthhack.ru</span></div>
+      </aside>
     </div>
   </section>
 
@@ -373,7 +389,7 @@
       </div>
       <div class="ba accent">
         <div class="t">Дисциплина границ</div>
-        <p style="margin:0;font-size:14px;line-height:1.55;color:#33363c">Где данных не хватает или они косвенные — система <b>не выдумывает</b>, а помечает <code>insufficient_data</code> и отделяет заявленное от доказанного. Честность важнее красивого ответа.</p>
+        <p style="margin:0;font-size:14px;line-height:1.55;color:#33363c">Где данных не хватает или они косвенные — система <b>не выдумывает</b>, а прямо говорит «здесь данных не хватает» и отделяет факты от догадок. Честность важнее красивого ответа.</p>
       </div>
     </div>
   </section>
@@ -461,7 +477,7 @@
 
     <div class="orch">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l3 3M16 16l3 3M19 5l-3 3M8 16l-3 3"/></svg>
-      <span><b>Оркестратор</b> держит контекст диалога, в режиме ресёрча гоняет под-вопросы <b>параллельно</b> и синтезирует ответ. Гарантия: никогда не 500, при нехватке данных — <b>insufficient_data: true</b>.</span>
+      <span><b>Оркестратор</b> держит контекст диалога, в режиме ресёрча гоняет под-вопросы <b>параллельно</b> и синтезирует ответ. Гарантия: никогда не 500, при нехватке данных — честно <b>«данных недостаточно»</b>.</span>
     </div>
 
     <div class="dlabel">Ключевые решения — и почему</div>
@@ -470,7 +486,7 @@
       <div class="dec"><b>DuckDB read-only + guard-rails</b><span>Только SELECT и белый список таблиц → данные физически нельзя испортить, SQL-инъекция отбита, сервер никогда не падает в 500.</span></div>
       <div class="dec"><b>Гибрид: 35 метрик + guarded SQL</b><span>Проверенные цифры на частых вопросах + гибкий SQL на остальных — одновременно точность и покрытие.</span></div>
       <div class="dec"><b>Critic-петля ≤2 + keep-best</b><span>Самокоррекция по замечанию ревизора, но кривой совет критика не деградирует уже верный ответ (берём лучший непадший).</span></div>
-      <div class="dec"><b>Честность по умолчанию</b><span>Нет данных → <code>insufficient_data</code>, не выдумываем. Это и есть boundary discipline — 15% оценки.</span></div>
+      <div class="dec"><b>Честность по умолчанию</b><span>Нет данных → честно «данных недостаточно», не выдумываем. Это и есть дисциплина границ — 15% оценки.</span></div>
       <div class="dec"><b>Робастность: never-500 + never-hang</b><span>Таймауты LLM-вызова и пайплайна + graceful-ответ — под живого LLM-судью отвечаем всегда и в срок.</span></div>
     </div>
     <div class="chips">
@@ -565,13 +581,13 @@
         <p>Сложный вопрос система сама декомпозирует на под-вопросы и гоняет их <b>параллельно</b>, затем синтезирует единый вывод.</p>
         <div class="ex">🔍 <b>«Здоров ли бизнес?»</b> → 4 оси (монетизация · отток · AI-угроза · юнит-экономика) → сводка.</div>
       </div>
-      <div class="mcard m3">
+      <a class="mcard m3" href="/reports" target="_blank" rel="noopener" style="text-decoration:none;color:inherit">
         <div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
         <div class="lbl">Режим 3</div>
         <h4>Отчёты по расписанию</h4>
         <p>Дашборды здоровья бизнеса по cron: метрики + риски + качество данных, доставка в инбокс/Telegram.</p>
-        <div class="ex">📅 <b>Пн 09:00</b> → авто-дашборд с графиками, рисками и рекомендациями. Страница <b>/reports</b>.</div>
-      </div>
+        <div class="ex">📅 <b>Пн 09:00</b> → авто-дашборд с графиками, рисками и рекомендациями. <b>Открыть /reports →</b></div>
+      </a>
     </div>
   </section>
 
@@ -590,7 +606,7 @@
       <div class="rcell"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><div><b>Prompt injection отбит</b><span>не раскрывает промпт, не выдумывает</span></div></div>
       <div class="rcell"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><div><b>Спецсимволы и длинные входы</b><span>не роняют пайплайн</span></div></div>
       <div class="rcell"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><div><b>Коды ошибок по контракту</b><span>пустое→400 · нет поля→422 · путь→404</span></div></div>
-      <div class="rcell"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><div><b>Нет данных → честно</b><span>insufficient_data, а не галлюцинация</span></div></div>
+      <div class="rcell"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><div><b>Нет данных → честно</b><span>«данных недостаточно», а не выдумка</span></div></div>
       <div class="rcell"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><div><b>Critic ловит галлюцинации</b><span>сверка чисел, раздутые join'ы, ложные отказы</span></div></div>
       <div class="rcell"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><div><b>GET /health · CORS · /monitor</b><span>бонусы контракта + живой мониторинг</span></div></div>
     </div>
@@ -628,14 +644,41 @@
     </div>
   </section>
 
+  <!-- REFLECTION -->
+  <section class="slide" id="reflect">
+    <div class="eyebrow">Рефлексия по опыту</div>
+    <h2 class="title">Что забираем с собой</h2>
+    <div class="quotes">
+      <div class="quote"><p>Направление PDLC в одних руках — реально.</p></div>
+      <div class="quote"><p>Развивать, среди прочего, нужно чувство прекрасного.</p></div>
+      <div class="quote"><p>Мир всё ещё делится на тех, кому важно качество системы, и тех, кому важен запрос клиента.</p></div>
+      <div class="quote"><p>Лучший отпуск — это заниматься любимым делом. И это был прекрасный отпуск.</p></div>
+    </div>
+  </section>
+
+  <!-- THANKS -->
+  <section class="slide" id="thanks">
+    <div class="eyebrow">Спасибо</div>
+    <h2 class="title">Спасибо</h2>
+    <div class="thanks">
+      <div><b>Организаторам</b> <span class="t">— за возможность прожить этот опыт</span></div>
+      <div><b>Партнёрам</b> <span class="t">— за бесплатные ресурсы</span></div>
+      <div><b>Камилю</b> <span class="t">— за бесценный саппорт</span></div>
+      <div><b>Жюри и вам</b> <span class="t">— за активное участие</span></div>
+      <div><b>Другим командам</b> <span class="t">— за мотивацию</span></div>
+      <div><b>Юлиане</b> <span class="t">— за идеальное напарничество</span></div>
+      <div><b>И мне</b> <span class="t">— за дикий интерес, азарт и упоротость</span></div>
+    </div>
+  </section>
+
   <div class="foot">Meridian — мультиагентный AI-аналитик для совета директоров · AI South Hub 2026 · команда team-004</div>
 
   <script>
     // активная точка навигации
     const dots=[...document.querySelectorAll('.dots a')];
-    const secs=['hero','problem','cases','synth','trust','arch','trace','modes','robust','deploy'].map(id=>document.getElementById(id));
+    const secs=['hero','problem','cases','synth','trust','arch','trace','modes','robust','deploy','reflect','thanks'].map(id=>document.getElementById(id));
     // кликабельные колонки-гипотезы → чат с этим вопросом
-    document.querySelectorAll('.case[data-q]').forEach(a=>{a.href='/?q='+encodeURIComponent(a.dataset.q);});
+    document.querySelectorAll('.case[data-q]').forEach(a=>{a.href='/?q='+encodeURIComponent(a.dataset.q);a.target='_blank';a.rel='noopener';});
     const io=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){
       dots.forEach(d=>d.classList.toggle('on',d.getAttribute('href')==='#'+e.target.id));}});},{threshold:.5});
     secs.forEach(s=>io.observe(s));
