@@ -6,6 +6,12 @@
       "runtimeExecutable": "node",
       "runtimeArgs": ["--env-file=.env", "--import", "tsx", "src/main.ts"],
       "port": 8000
+    },
+    {
+      "name": "demo-static",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["-y", "http-server", "web", "-p", "8123", "-c-1"],
+      "port": 8123
     }
   ]
 }

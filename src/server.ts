@@ -111,8 +111,10 @@ export function buildServer(deps: ServerDeps): FastifyInstance {
   app.get("/openapi.json", async () => OPENAPI);
   app.get("/docs", async (_req, reply) => reply.type("text/html; charset=utf-8").send(DOCS_HTML));
 
-  const serve = (name: string, type: string) => async (_req: unknown, reply: { type: (t: string) => { send: (b: string) => unknown } }) =>
-    reply.type(type).send(readWeb(name));
+  // no-cache: браузер кэширует, но обязан ревалидировать перед использованием —
+  // т.к. сервер всегда отдаёт свежий файл, пользователь не застрянет на старой версии UI.
+  const serve = (name: string, type: string) => async (_req: unknown, reply: any) =>
+    reply.header("cache-control", "no-cache").type(type).send(readWeb(name));
   app.get("/", serve("index.html", "text/html; charset=utf-8") as never);
   app.get("/app.js", serve("app.js", "application/javascript; charset=utf-8") as never);
   app.get("/styles.css", serve("styles.css", "text/css; charset=utf-8") as never);

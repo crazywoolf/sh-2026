@@ -24,7 +24,33 @@ body {
   margin: 0; font-family: var(--font); color: var(--txt); background: var(--bg);
   display: flex; flex-direction: column; height: 100vh;
 }
+body.chat { flex-direction: row; }   /* строка с сайдбаром — только страница чата */
+.app { display: flex; flex-direction: column; flex: 1; min-width: 0; height: 100%; }
 button { font-family: var(--font); cursor: pointer; }
+
+/* Сайдбар истории чатов */
+.sidebar { width: 264px; flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--line);
+  display: flex; flex-direction: column; height: 100%; }
+.side-head { padding: 12px; border-bottom: 1px solid var(--line); }
+.side-new { width: 100%; border: 1px solid var(--line-strong); background: var(--surface); border-radius: 9px;
+  padding: 9px 10px; font-size: 13px; font-weight: 600; color: var(--brand-strong);
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
+.side-new:hover { background: var(--brand-bg2); border-color: var(--brand); }
+.side-list { flex: 1; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 2px; }
+.side-item { display: flex; align-items: center; gap: 6px; padding: 8px 10px; border-radius: 8px;
+  font-size: 13px; color: var(--txt); cursor: pointer; }
+.side-item:hover { background: var(--bg); }
+.side-item.active { background: var(--brand-bg2); color: var(--brand-strong); }
+.side-title { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.side-del { border: none; background: none; color: var(--txt-3); padding: 2px; display: none; flex-shrink: 0; }
+.side-item:hover .side-del, .side-item.active .side-del { display: flex; }
+.side-del:hover { color: var(--danger); }
+.side-empty { color: var(--txt-3); font-size: 12px; padding: 14px 10px; text-align: center; }
+.side-foot { padding: 10px 12px; border-top: 1px solid var(--line); font-size: 11px; color: var(--txt-3); }
+.hbtn.side-toggle { display: none; }
+.sidebar-scrim { position: fixed; inset: 0; background: rgba(20,20,30,.42); opacity: 0; pointer-events: none;
+  transition: opacity .2s; z-index: 54; }
+body.sidebar-open .sidebar-scrim { opacity: 1; pointer-events: auto; }
 
 /* Шапка */
 header {
@@ -166,6 +192,13 @@ textarea#input { flex: 1; border: none; outline: none; resize: none; font-family
 
 /* Высота с учётом мобильного браузера */
 @supports (height: 100dvh) { body { height: 100dvh; } }
+
+/* Сайдбар: off-canvas на узких экранах */
+@media (max-width: 860px) {
+  .sidebar { position: fixed; top: 0; left: 0; z-index: 55; transform: translateX(-101%); transition: transform .2s ease; box-shadow: 2px 0 16px rgba(20,20,30,.12); }
+  body.sidebar-open .sidebar { transform: translateX(0); }
+  .hbtn.side-toggle { display: inline-flex; }
+}
 
 /* Мобильная адаптация */
 @media (max-width: 600px) {

@@ -52,6 +52,7 @@
     .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
     .stat b{display:block;font-size:30px;letter-spacing:-.02em}
     .stat span{font-size:13px;color:var(--mut)}
+    .team-lbl{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-top:14px}
     .cta{display:flex;gap:12px;margin-bottom:30px;flex-wrap:wrap;align-items:center}
     .hero-top{display:grid;grid-template-columns:1.15fr .85fr;gap:48px;align-items:center;width:100%}
     .hero-main{min-width:0}
@@ -68,23 +69,36 @@
     .btn:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
     .btn.primary{background:var(--brand);color:#fff;border-color:var(--brand)}
     /* architecture flow */
-    .flow{display:flex;flex-direction:column;align-items:center;gap:10px;max-width:600px;margin:0 auto;width:100%}
-    .node{width:100%;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;
+    .flow{display:flex;flex-direction:row;align-items:stretch;gap:8px;max-width:100%;margin:0 auto;width:100%}
+    .flow>.node{flex:1 1 0;min-width:0}
+    .node{width:100%;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px 14px;
       box-shadow:var(--shadow);position:relative}
-    .node .ico{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;margin-bottom:10px;
+    .node .ico{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;margin-bottom:8px;
       background:#ece9fb;color:var(--brand)}
-    .node h4{margin:0 0 4px;font-size:15px}
-    .node p{margin:0;font-size:12.5px;color:var(--mut);line-height:1.45}
-    .arrow{align-self:center;color:#c4c4d0;flex:0 0 auto;transform:rotate(90deg)}
-    .loop-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;border:1.5px dashed #cfc9f0;
-      border-radius:16px;padding:22px 14px 14px;background:#faf9ff;position:relative}
+    .node h4{margin:0 0 4px;font-size:14.5px}
+    .node p{margin:0;font-size:12px;color:var(--mut);line-height:1.4}
+    .arrow{align-self:center;color:#c4c4d0;flex:0 0 auto;transform:none}
+    .loop-wrap{display:flex;flex-direction:row;align-items:stretch;gap:8px;flex:3 1 0;min-width:0;border:1.5px dashed #cfc9f0;
+      border-radius:16px;padding:24px 12px 12px;background:#faf9ff;position:relative}
+    .loop-wrap>.node{flex:1 1 0;min-width:0}
     .loop-wrap::after{content:"петля проверки ≤2";position:absolute;top:-9px;left:14px;background:#faf9ff;padding:0 8px;
       font-size:11px;color:var(--brand);font-weight:700}
-    .orch{display:flex;align-items:center;gap:10px;margin-top:16px;font-size:13px;color:var(--mut);
-      background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 16px;box-shadow:var(--shadow)}
+    .orch{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:12.5px;color:var(--mut);
+      background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 14px;box-shadow:var(--shadow)}
     .orch b{color:var(--ink)}
-    .dlabel{font-size:12px;font-weight:700;color:var(--brand);margin:20px 0 10px;text-transform:uppercase;letter-spacing:.05em}
-    .decisions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .dlabel{font-size:12px;font-weight:700;color:var(--brand);margin:12px 0 8px;text-transform:uppercase;letter-spacing:.05em}
+    .decisions{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+    #arch{padding-top:58px;padding-bottom:34px}
+    #arch .dec{padding:10px 13px}
+    #arch .dec b{margin-bottom:2px}
+    @media (max-width:980px){
+      .flow{flex-direction:column;max-width:600px}
+      .flow>.node{flex:none;width:100%}
+      .loop-wrap{flex-direction:column;flex:none;width:100%}
+      .loop-wrap>.node{flex:none;width:100%}
+      .arrow{transform:rotate(90deg)}
+      .decisions{grid-template-columns:1fr 1fr}
+    }
     .dec{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:var(--shadow)}
     .dec b{display:block;font-size:13.5px;margin-bottom:3px;color:var(--ink)}
     .dec span{font-size:12.5px;color:var(--mut);line-height:1.45}
@@ -169,10 +183,12 @@
     .hint-click{font-size:12.5px;color:var(--mut);margin-top:14px;display:flex;align-items:center;gap:7px}
     /* синтез */
     .tradeoffs{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
-    .to{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:13px;padding:13px 16px;box-shadow:var(--shadow)}
+    .to{display:flex;flex-direction:column;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:13px;padding:13px 16px;box-shadow:var(--shadow)}
+    .to-pair{display:flex;align-items:center;gap:10px}
     .to .l,.to .r{flex:1;font-size:13px;font-weight:600;line-height:1.3}
     .to .l{text-align:right}.to .vs{color:#c4c4d0;font-weight:800;font-size:12px;flex:0 0 auto}
     .to .r{color:var(--mut)}
+    .to-cmt{font-size:12px;line-height:1.45;color:var(--mut);border-top:1px solid var(--line);padding-top:8px}
     .beforeafter{display:grid;grid-template-columns:1fr 1fr;gap:14px}
     .ba{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow)}
     .ba.accent{background:linear-gradient(160deg,#efeefb,#fff)}
@@ -228,9 +244,12 @@
       .cases{grid-template-columns:1fr}
       .tradeoffs{grid-template-columns:1fr}
       .beforeafter{grid-template-columns:1fr}
+      .princ-grid{grid-template-columns:1fr}
+      .decisions{grid-template-columns:1fr}
     }
     @media (min-width:721px) and (max-width:980px){
       .cases{grid-template-columns:repeat(2,1fr)}
+      .princ-grid{grid-template-columns:repeat(2,1fr)}
     }
   </style>
 </head>
@@ -272,11 +291,10 @@
           <a class="btn primary" href="/">Задать вопрос системе</a>
           <a class="btn" href="#problem">С чего всё началось ↓</a>
         </div>
+        <div class="team-lbl">Команда</div>
         <div class="stats">
-          <div class="stat"><b>5</b><span>агентов в конвейере</span></div>
-          <div class="stat"><b>35</b><span>метрик в библиотеке</span></div>
-          <div class="stat"><b>0</b><span>ответов 500 · 0/13 stress</span></div>
-          <div class="stat"><b>3</b><span>режима: чат · ресёрч · отчёты</span></div>
+          <div class="stat"><b>Юлиана</b><span>владелец бизнеса</span></div>
+          <div class="stat"><b>Ира</b><span>PTL</span></div>
         </div>
       </div>
       <aside class="hero-qr">
@@ -372,10 +390,22 @@
     <h2 class="title">Совет получает не одну метрику, а карту компромиссов</h2>
     <p class="lead">Ни одно направление не «выигрывает» в вакууме — у каждого своя цена. Meridian показывает компромиссы явно: с цифрами, методом и допущениями.</p>
     <div class="tradeoffs">
-      <div class="to"><span class="l">Инвестиции в AI</span><span class="vs">↔</span><span class="r">EBITDA</span></div>
-      <div class="to"><span class="l">Крупный сегмент</span><span class="vs">↔</span><span class="r">GMV</span></div>
-      <div class="to"><span class="l">Удержание скидками</span><span class="vs">↔</span><span class="r">маржа</span></div>
-      <div class="to"><span class="l">Активность клиентов</span><span class="vs">≠</span><span class="r">выручка</span></div>
+      <div class="to">
+        <div class="to-pair"><span class="l">Инвестиции в AI</span><span class="vs">↔</span><span class="r">EBITDA</span></div>
+        <div class="to-cmt">Вложимся в AI — догоним конкурентов, но расходы вырастут и прибыль просядет уже сейчас.</div>
+      </div>
+      <div class="to">
+        <div class="to-pair"><span class="l">Крупный сегмент</span><span class="vs">↔</span><span class="r">GMV</span></div>
+        <div class="to-cmt">Крупные клиенты прибыльнее, но на них лишь ~25% оборота — уйдём в Large, потеряем ¾ GMV.</div>
+      </div>
+      <div class="to">
+        <div class="to-pair"><span class="l">Удержание скидками</span><span class="vs">↔</span><span class="r">маржа</span></div>
+        <div class="to-cmt">Скидки удержат клиентов от ухода, но каждая скидка съедает маржу — держим людей ценой денег.</div>
+      </div>
+      <div class="to">
+        <div class="to-pair"><span class="l">Активность клиентов</span><span class="vs">≠</span><span class="r">выручка</span></div>
+        <div class="to-cmt">Заходят и кликают чаще — но это не значит, что больше заказывают. Активность деньгами не равна.</div>
+      </div>
     </div>
     <div class="beforeafter">
       <div class="ba">
@@ -398,11 +428,11 @@
   <section class="slide" id="trust">
     <div class="eyebrow">Почему результату можно доверять</div>
     <h2 class="title">Шесть принципов</h2>
-    <p class="lead">Каждый принцип отвечает на конкретный критерий оценки — это то, что отличает аналитика от «генератора текста».</p>
+    <p class="lead">Каждый принцип отвечает на конкретное ожидание от системы — это то, что отличает аналитика от «генератора текста».</p>
     <div class="princ-grid">
       <div class="princ">
         <b>Честность о данных</b>
-        <p>Система говорит «здесь данных не хватает» — и это <b>правильный ответ</b>, а не провал.</p>
+        <p>Говорит «здесь данных не хватает» — и это <b>правильный ответ, а не провал.</b></p>
         <span class="crit">дисциплина границ</span>
       </div>
       <div class="princ">
@@ -574,13 +604,13 @@
         <p>Свободный диалог: краткий ответ + график, удержание контекста между вопросами («а по сегментам?», «в динамике»).</p>
         <div class="ex">💬 <b>«Почему выручка падает?»</b> → ответ с цифрами → «а в разрезе сегментов?» — система помнит тему.</div>
       </div>
-      <div class="mcard m2">
+      <a class="mcard m2" data-q="Здоров ли бизнес? Дай комплексную оценку по ключевым осям." target="_blank" rel="noopener" style="text-decoration:none;color:inherit">
         <div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></div>
         <div class="lbl">Режим 2</div>
         <h4>Ad-hoc исследование</h4>
         <p>Сложный вопрос система сама декомпозирует на под-вопросы и гоняет их <b>параллельно</b>, затем синтезирует единый вывод.</p>
-        <div class="ex">🔍 <b>«Здоров ли бизнес?»</b> → 4 оси (монетизация · отток · AI-угроза · юнит-экономика) → сводка.</div>
-      </div>
+        <div class="ex">🔍 <b>«Здоров ли бизнес?»</b> → 4 оси (монетизация · отток · AI-угроза · юнит-экономика) → сводка. <b>Спросить вживую →</b></div>
+      </a>
       <a class="mcard m3" href="/reports" target="_blank" rel="noopener" style="text-decoration:none;color:inherit">
         <div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
         <div class="lbl">Режим 3</div>
@@ -638,10 +668,6 @@
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
       <span class="st">/health 200 + регресс-сьют</span>
     </div>
-    <div class="cta" style="margin-top:28px">
-      <a class="btn primary" href="/">Открыть систему</a>
-      <a class="btn" href="#hero">В начало ↑</a>
-    </div>
   </section>
 
   <!-- REFLECTION -->
@@ -651,7 +677,7 @@
     <div class="quotes">
       <div class="quote"><p>Направление PDLC в одних руках — реально.</p></div>
       <div class="quote"><p>Развивать, среди прочего, нужно чувство прекрасного.</p></div>
-      <div class="quote"><p>Мир всё ещё делится на тех, кому важно качество системы, и тех, кому важен запрос клиента.</p></div>
+      <div class="quote"><p>Идеальная команда — это когда каждый делает то, что хочет, и это приводит к нужному результату.</p></div>
       <div class="quote"><p>Лучший отпуск — это заниматься любимым делом. И это был прекрасный отпуск.</p></div>
     </div>
   </section>
@@ -664,10 +690,14 @@
       <div><b>Организаторам</b> <span class="t">— за возможность прожить этот опыт</span></div>
       <div><b>Партнёрам</b> <span class="t">— за бесплатные ресурсы</span></div>
       <div><b>Камилю</b> <span class="t">— за бесценный саппорт</span></div>
-      <div><b>Жюри и вам</b> <span class="t">— за активное участие</span></div>
       <div><b>Другим командам</b> <span class="t">— за мотивацию</span></div>
+      <div><b>Жюри и вам</b> <span class="t">— за активное участие</span></div>
       <div><b>Юлиане</b> <span class="t">— за идеальное напарничество</span></div>
       <div><b>И мне</b> <span class="t">— за дикий интерес, азарт и упоротость</span></div>
+    </div>
+    <div class="cta" style="margin-top:28px">
+      <a class="btn primary" href="/">Открыть систему</a>
+      <a class="btn" href="#hero">В начало ↑</a>
     </div>
   </section>
 
@@ -678,7 +708,7 @@
     const dots=[...document.querySelectorAll('.dots a')];
     const secs=['hero','problem','cases','synth','trust','arch','trace','modes','robust','deploy','reflect','thanks'].map(id=>document.getElementById(id));
     // кликабельные колонки-гипотезы → чат с этим вопросом
-    document.querySelectorAll('.case[data-q]').forEach(a=>{a.href='/?q='+encodeURIComponent(a.dataset.q);a.target='_blank';a.rel='noopener';});
+    document.querySelectorAll('[data-q]').forEach(a=>{a.href='/?q='+encodeURIComponent(a.dataset.q);a.target='_blank';a.rel='noopener';});
     const io=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){
       dots.forEach(d=>d.classList.toggle('on',d.getAttribute('href')==='#'+e.target.id));}});},{threshold:.5});
     secs.forEach(s=>io.observe(s));

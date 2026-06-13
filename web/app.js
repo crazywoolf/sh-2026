@@ -18,6 +18,71 @@ const SUGGESTIONS = [
 ];
 const FOLLOWUPS = ["В динамике по годам", "Разбей по сегментам", "Сравни продуктовые линии", "Что с этим делать?"];
 
+// --- История чатов (localStorage) ---
+const LS_KEY = "meridian_chats_v1";
+let chats = [];      // [{id, title, ts, msgs:[{role:'user',text} | {role:'bot',r}]}]
+let activeId = sessionId;
+function loadChats() { try { return JSON.parse(localStorage.getItem(LS_KEY)) || []; } catch { return []; } }
+function saveChats() { try { localStorage.setItem(LS_KEY, JSON.stringify(chats.slice(0, 40))); } catch {} }
+function saveActive() { try { localStorage.setItem(LS_KEY + "_active", activeId || ""); } catch {} }
+function activeChat() { return chats.find((c) => c.id === activeId); }
+
+function pushUser(text) {
+  let c = activeChat();
+  if (!c) { c = { id: sessionId, title: text.slice(0, 42), ts: Date.now(), msgs: [] }; chats.unshift(c); activeId = sessionId; saveActive(); }
+  if (!c.title) c.title = text.slice(0, 42);
+  c.msgs.push({ role: "user", text }); c.ts = Date.now();
+  saveChats(); renderSidebar();
+}
+function pushBot(r) { const c = activeChat(); if (!c) return; c.msgs.push({ role: "bot", r }); saveChats(); }
+
+function showWelcome() {
+  log.innerHTML = "";
+  const w = el("div", "welcome");
+  w.id = "welcome";
+  w.innerHTML = '<div class="mark">M</div><h2>Спросите про бизнес Meridian</h2>'
+    + '<p>Задайте вопрос на естественном языке — система сама решит, ответить кратко или провести мини-исследование. Вот с чего можно начать:</p>'
+    + '<div class="suggest" id="suggest"></div>';
+  log.appendChild(w);
+  renderSuggestions();
+}
+function renderChat(chat) {
+  log.innerHTML = "";
+  if (!chat || !chat.msgs.length) { showWelcome(); return; }
+  chat.msgs.forEach((m) => {
+    if (m.role === "user") userMsg(m.text);
+    else { const node = el("div", "msg bot"); log.appendChild(node); botAnswer(node, m.r); }
+  });
+  scroll();
+}
+function renderSidebar() {
+  const list = document.getElementById("chat-list");
+  if (!list) return;
+  list.innerHTML = "";
+  if (!chats.length) { list.appendChild(el("div", "side-empty", "Пока нет истории")); return; }
+  chats.forEach((c) => {
+    const item = el("div", "side-item" + (c.id === activeId ? " active" : ""));
+    item.appendChild(el("span", "side-title", esc(c.title || "Новый чат")));
+    const del = el("button", "side-del", svg("trash", 13));
+    del.title = "Удалить";
+    del.onclick = (e) => {
+      e.stopPropagation();
+      chats = chats.filter((x) => x.id !== c.id); saveChats();
+      if (activeId === c.id) newChat(); else renderSidebar();
+    };
+    item.appendChild(del);
+    item.onclick = () => loadChat(c.id);
+    list.appendChild(item);
+  });
+}
+function loadChat(id) { activeId = id; sessionId = id; saveActive(); renderChat(activeChat()); renderSidebar(); closeSidebar(); }
+function newChat() {
+  sessionId = "web-" + Math.random().toString(36).slice(2);
+  activeId = sessionId; saveActive();
+  showWelcome(); renderSidebar(); closeSidebar();
+}
+function closeSidebar() { document.body.classList.remove("sidebar-open"); }
+
 const log = document.getElementById("log");
 const thread = document.getElementById("thread");
 const input = document.getElementById("input");
@@ -59,7 +124,8 @@ function md(text) {
 const RU_MON = ["янв", "фев", "мар", "апр", "май", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"];
 // Подписи-даты в человеческий вид: 2023-01-01 → «янв 23», 2024-07 → «июл 24».
 function fmtLabel(s) {
-  const m = /^(\d{4})-(\d{2})(?:-\d{2})?$/.exec(s);
+  // даты могут приходить с временем (2023-01-01 00:00:00 / ISO с T) — срезаем его
+  const m = /^(\d{4})-(\d{2})(?:-\d{2})?(?:[ T]\d{2}:\d{2}(?::\d{2})?(?:\.\d+)?Z?)?$/.exec(s);
   if (m) return RU_MON[+m[2] - 1] + " " + m[1].slice(2);
   return s;
 }
@@ -211,6 +277,7 @@ async function sendText(text) {
   busy = true; updateSend();
   const w = document.getElementById("welcome"); if (w) w.remove();
   userMsg(q);
+  pushUser(q);
   input.value = ""; autogrow();
   const node = thinkingMsg();
   try {
@@ -220,6 +287,7 @@ async function sendText(text) {
     });
     const r = await res.json();
     botAnswer(node, r);
+    pushBot(r);
   } catch {
     clearInterval(node._timer);
     node.innerHTML = '<div class="answer insufficient">Не удалось получить ответ. Попробуйте ещё раз.</div>';
@@ -240,11 +308,20 @@ input.addEventListener("input", () => { autogrow(); updateSend(); });
 input.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendText(input.value); }
 });
-document.getElementById("new-chat").onclick = () => {
-  sessionId = "web-" + Math.random().toString(36).slice(2);
-  location.reload();
-};
-renderSuggestions();
+document.getElementById("side-new").onclick = newChat;
+document.getElementById("side-toggle").onclick = () => document.body.classList.toggle("sidebar-open");
+document.getElementById("sidebar-scrim").onclick = closeSidebar;
+
+chats = loadChats();
+const savedActive = (() => { try { return localStorage.getItem(LS_KEY + "_active"); } catch { return null; } })();
+if (savedActive && chats.some((c) => c.id === savedActive)) {
+  activeId = savedActive; sessionId = savedActive;
+  renderChat(activeChat());     // восстановить последний чат + подсветить его
+} else {
+  activeId = sessionId;          // свежий пустой чат → экран приветствия
+  renderSuggestions();
+}
+renderSidebar();
 updateSend();
 
 // авто-запуск вопроса из ссылки (?q=…) — клик по колонке-гипотезе на /demo
