@@ -52,7 +52,13 @@
     .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
     .stat b{display:block;font-size:30px;letter-spacing:-.02em}
     .stat span{font-size:13px;color:var(--mut)}
-    .cta{display:flex;gap:12px;margin-bottom:34px;flex-wrap:wrap}
+    .cta{display:flex;gap:12px;margin-bottom:34px;flex-wrap:wrap;align-items:center}
+    .qr{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 14px 8px 10px;box-shadow:var(--shadow);margin-left:auto}
+    .qr svg{width:104px;height:104px;display:block}
+    .qr div{display:flex;flex-direction:column;line-height:1.25}
+    .qr b{font-size:13px;color:var(--ink)}
+    .qr span{font-size:11px;color:var(--mut)}
+    @media (max-width:720px){ .qr{margin-left:0} }
     .btn{display:inline-flex;align-items:center;gap:8px;padding:12px 20px;border-radius:11px;font-size:15px;
       font-weight:600;text-decoration:none;border:1px solid var(--line);background:#fff;transition:.15s}
     .btn:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
@@ -245,12 +251,16 @@
 
   <!-- HERO -->
   <section class="slide hero" id="hero">
-    <div class="eyebrow">Мультиагентный AI-аналитик</div>
-    <h1>Вопрос совета директоров на русском —<br><span class="g">обоснованный ответ с цифрами и методом.</span></h1>
-    <p>Meridian заменяет 5–10 дней ожидания тикета аналитики на ответ за минуты. Пять агентов: интерпретация → SQL → бизнес-вывод → критика галлюцинаций → график. Честно говорит «данных недостаточно» вместо выдумок.</p>
+    <div class="eyebrow">Meridian · AI-аналитик для совета директоров</div>
+    <h1>Ответ на бизнес-вопрос —<br><span class="g">за минуты, с цифрами и методом.</span></h1>
+    <p>Совет спрашивает на обычном языке — Meridian отвечает обоснованно: <b>цифры, метод расчёта, допущения</b>. И честно говорит «данных недостаточно» вместо выдумок. Было — тикет аналитикам на 5–10 дней; стало — ответ за минуты.</p>
     <div class="cta">
       <a class="btn primary" href="/">Задать вопрос системе</a>
       <a class="btn" href="#problem">С чего всё началось ↓</a>
+      <div class="qr">
+        <svg viewBox="0 0 37 37" shape-rendering="crispEdges" aria-label="QR на чат"><path fill="#fff" d="M0 0h37v37H0z"/><path stroke="#000" d="M4 4.5h7m1 0h2m2 0h4m3 0h2m1 0h7M4 5.5h1m5 0h1m1 0h1m1 0h4m2 0h3m3 0h1m5 0h1M4 6.5h1m1 0h3m1 0h1m2 0h3m4 0h1m2 0h2m1 0h1m1 0h3m1 0h1M4 7.5h1m1 0h3m1 0h1m1 0h1m1 0h1m3 0h2m1 0h1m2 0h1m1 0h1m1 0h3m1 0h1M4 8.5h1m1 0h3m1 0h1m2 0h1m2 0h1m1 0h1m1 0h1m2 0h1m2 0h1m1 0h3m1 0h1M4 9.5h1m5 0h1m2 0h1m2 0h2m1 0h2m2 0h2m1 0h1m5 0h1M4 10.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M12 11.5h1m6 0h3m1 0h1M4 12.5h1m1 0h2m1 0h3m1 0h1m1 0h1m1 0h1m1 0h2m3 0h1m2 0h1m1 0h2M7 13.5h2m5 0h6m1 0h6m1 0h1m3 0h1M4 14.5h1m1 0h6m2 0h1m2 0h1m2 0h2m3 0h2m3 0h2M5 15.5h2m2 0h1m3 0h1m1 0h2m3 0h1m4 0h4m3 0h1M6 16.5h1m1 0h1m1 0h4m1 0h1m2 0h2m1 0h1m2 0h2m3 0h2M4 17.5h4m1 0h1m2 0h1m1 0h3m1 0h1m1 0h2m1 0h1m1 0h2m3 0h3M6 18.5h1m2 0h2m1 0h1m2 0h1m1 0h1m1 0h2m2 0h2m1 0h2m2 0h3M4 19.5h1m1 0h2m1 0h1m5 0h2m1 0h1m1 0h1m4 0h1m2 0h1m2 0h1M7 20.5h5m2 0h1m1 0h1m1 0h2m2 0h3m2 0h3m1 0h1M7 21.5h1m1 0h1m1 0h2m3 0h1m1 0h1m1 0h1m3 0h2m1 0h1m1 0h3M4 22.5h1m3 0h1m1 0h5m1 0h7m1 0h2m1 0h2m1 0h1M7 23.5h1m3 0h2m2 0h1m1 0h6m1 0h1m5 0h1M5 24.5h3m2 0h2m1 0h18M12 25.5h2m1 0h2m4 0h2m1 0h1m3 0h5M4 26.5h7m1 0h3m1 0h1m1 0h1m1 0h1m2 0h2m1 0h1m1 0h2m1 0h1M4 27.5h1m5 0h1m1 0h7m3 0h1m1 0h1m3 0h2m2 0h1M4 28.5h1m1 0h3m1 0h1m3 0h1m1 0h1m2 0h4m1 0h5m1 0h2M4 29.5h1m1 0h3m1 0h1m1 0h1m1 0h2m1 0h1m1 0h2m6 0h3m2 0h1M4 30.5h1m1 0h3m1 0h1m1 0h2m2 0h1m3 0h3m1 0h2m1 0h1m2 0h1m1 0h1M4 31.5h1m5 0h1m2 0h5m4 0h1m1 0h1m3 0h2m1 0h1M4 32.5h7m1 0h1m3 0h1m3 0h1m1 0h1m1 0h1m4 0h1m1 0h1"/></svg>
+        <div><b>Сканируйте →</b><span>откроется живой чат</span></div>
+      </div>
     </div>
     <div class="stats">
       <div class="stat"><b>5</b><span>агентов в конвейере</span></div>
